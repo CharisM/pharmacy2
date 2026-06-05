@@ -602,7 +602,7 @@
                 <div class="carousel-copy">
                     <h3>Discover Wellness Essentials</h3>
                     <p>Browse premium supplements, vitamins, and care products in our curated carousel. Each slide highlights a top wellness pick with a clean, user-friendly layout.</p>
-                    <a href="{{ route('shop') }}" class="btn-primary">Shop Wellness</a>
+                    <button type="button" class="btn-primary">Shop Wellness</button>
                 </div>
                     <div class="carousel-image">
                     <img src="{{ asset('images/c1.jpg') }}"
@@ -615,7 +615,7 @@
                 <div class="carousel-copy">
                     <h3>Fast Delivery on Everyday Care</h3>
                     <p>Get your essential medicines and personal care items delivered quickly. The carousel helps your customers focus on speed, convenience, and trust.</p>
-                    <a href="{{ route('shop') }}" class="btn-primary">View Delivery</a>
+                    <button type="button" class="btn-primary">View Delivery</button>
                 </div>
                <div class="carousel-image">
                     <img src="{{ asset('images/c2.jpg') }}"
@@ -668,7 +668,7 @@
     <div class="section-inner">
         <div class="section-header">
             <h2>Featured Products</h2>
-            <a href="{{ route('shop') }}" class="view-all">View All</a>
+            <a href="{{ route('categories') }}" class="view-all">View All</a>
         </div>
         <div class="products-grid">
             @foreach ($featured_products as $product)

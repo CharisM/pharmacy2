@@ -14,7 +14,23 @@ class AuthController extends Controller
         if (Auth::check()) {
             return redirect()->route('home');
         }
-        return view('auth.login');
+
+        return view('auth.login', [
+            'action' => route('login'),
+            'isAdmin' => false,
+        ]);
+    }
+
+    public function showAdminLogin()
+    {
+        if (Auth::check() && auth()->user()->isAdmin()) {
+            return redirect()->route('admin.dashboard');
+        }
+
+        return view('auth.login', [
+            'action' => route('admin.login'),
+            'isAdmin' => true,
+        ]);
     }
 
     public function login(Request $request)
@@ -29,6 +45,33 @@ class AuthController extends Controller
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
             $request->session()->regenerate();
             return redirect()->intended(route('home'));
+        }
+
+        return back()->withErrors([
+            'email' => 'The provided credentials do not match our records.',
+        ])->withInput($request->except('password'));
+    }
+
+    public function adminLogin(Request $request)
+    {
+        $request->validate([
+            'email'    => 'required|email',
+            'password' => 'required|min:6',
+        ]);
+
+        $credentials = $request->only('email', 'password');
+
+        if (Auth::attempt($credentials, $request->boolean('remember'))) {
+            $request->session()->regenerate();
+
+            if (! auth()->user()->isAdmin()) {
+                Auth::logout();
+                return back()->withErrors([
+                    'email' => 'You do not have admin access.',
+                ])->withInput($request->except('password'));
+            }
+
+            return redirect()->intended(route('admin.dashboard'));
         }
 
         return back()->withErrors([
@@ -52,15 +95,13 @@ class AuthController extends Controller
             'password' => 'required|min:6|confirmed',
         ]);
 
-        $user = User::create([
+        User::create([
             'name'     => $request->name,
             'email'    => $request->email,
             'password' => Hash::make($request->password),
         ]);
 
-        Auth::login($user);
-
-        return redirect()->route('home');
+        return redirect()->route('login');
     }
 
     public function logout(Request $request)

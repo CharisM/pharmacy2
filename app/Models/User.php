@@ -22,6 +22,8 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'is_admin',
+        'profile_picture',
     ];
 
     /**
@@ -44,6 +46,21 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_admin' => 'boolean',
         ];
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->is_admin;
+    }
+
+    public function getProfilePictureUrlAttribute(): string
+    {
+        if ($this->profile_picture && file_exists(public_path('profile-photos/' . $this->profile_picture))) {
+            return asset('profile-photos/' . $this->profile_picture);
+        }
+
+        return asset('images/default-avatar.svg');
     }
 }

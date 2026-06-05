@@ -212,12 +212,12 @@
         </div>
 
         <h2>
-            Login to <span>Healthcare</span><br>
+            {{ $isAdmin ? 'Admin Login to' : 'Login to' }} <span>Healthcare</span><br>
             Pharmacy
         </h2>
 
         <p class="subtitle">
-            Enter your credentials to access the system
+            {{ $isAdmin ? 'Enter your admin credentials to access the dashboard' : 'Enter your credentials to access the system' }}
         </p>
 
         @if ($errors->any())
@@ -226,7 +226,7 @@
             </div>
         @endif
 
-        <form action="{{ route('login') }}" method="POST">
+        <form action="{{ $action ?? route('login') }}" method="POST">
             @csrf
 
             <div class="form-group">
