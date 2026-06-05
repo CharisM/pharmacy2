@@ -174,6 +174,37 @@
             transform: translateY(-1px);
         }
 
+        .role-switch {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 18px;
+        }
+
+        .role-option {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 12px;
+            border-radius: 12px;
+            border: 1px solid transparent;
+            background: #ecfdf5;
+            color: #065f46;
+            text-decoration: none;
+            font-weight: 700;
+            transition: background 0.2s, border-color 0.2s;
+        }
+
+        .role-option.active {
+            background: #059669;
+            color: #ffffff;
+            border-color: #047857;
+        }
+
+        .role-option:hover {
+            background: #d1fae5;
+        }
+
         .auth-divider {
             text-align: center;
             margin-top: 22px;
@@ -215,6 +246,11 @@
             {{ $isAdmin ? 'Admin Login to' : 'Login to' }} <span>Healthcare</span><br>
             Pharmacy
         </h2>
+
+        <div class="role-switch">
+            <a href="{{ route('login') }}" class="role-option {{ $isAdmin ? '' : 'active' }}">Login as User</a>
+            <a href="{{ route('admin.login') }}" class="role-option {{ $isAdmin ? 'active' : '' }}">Login as Admin</a>
+        </div>
 
         <p class="subtitle">
             {{ $isAdmin ? 'Enter your admin credentials to access the dashboard' : 'Enter your credentials to access the system' }}

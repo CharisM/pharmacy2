@@ -31,6 +31,7 @@ class ProductSeeder extends Seeder
                     'old_price' => null,
                     'rating' => rand(10, 50) / 10,
                     'image' => null,
+                    'stock' => rand(0, 20),
                     'created_at' => $now,
                     'updated_at' => $now,
                 ]);

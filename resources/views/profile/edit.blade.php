@@ -42,9 +42,8 @@
                         <span style="display:block; margin-bottom:8px; font-weight:700;">Profile Picture</span>
                         <div style="display:flex; flex-wrap:wrap; gap:12px; align-items:center;">
                             <button type="button" class="btn-outline" style="padding:10px 18px;" onclick="document.getElementById('profile_picture_input').click();">Choose file</button>
-                            <span id="profile_picture_name" style="color:var(--muted);">No file selected</span>
                         </div>
-                        <input id="profile_picture_input" type="file" name="profile_picture" accept="image/*" style="position:absolute; top:0; left:0; opacity:0; width:100%; height:100%; pointer-events:none;" onchange="document.getElementById('profile_picture_name').textContent = this.files.length ? this.files[0].name : 'No file selected';" />
+                        <input id="profile_picture_input" type="file" name="profile_picture" accept="image/*" style="position:absolute; top:0; left:0; opacity:0; width:100%; height:100%; pointer-events:none;" />
                     </label>
 
                     <label style="display:block;">

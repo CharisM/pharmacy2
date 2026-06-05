@@ -61,4 +61,5 @@ Route::middleware(['auth', 'admin'])
     ->name('admin.')
     ->group(function () {
         Route::get('/', [AdminController::class, 'index'])->name('dashboard');
+        Route::put('/products/{product}', [AdminController::class, 'updateProduct'])->name('products.update');
     });

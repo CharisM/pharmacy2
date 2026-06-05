@@ -889,6 +889,7 @@
         : 0;
 @endphp
 
+@unless(request()->is('admin*'))
 <nav class="navbar">
     <div class="navbar-inner">
         <a href="{{ route('home') }}" class="navbar-brand">
@@ -959,6 +960,7 @@
         </div>
     </div>
 </nav>
+@endunless
 <main class="page-container">
 @if (session('success'))
     <div class="flash-message">
@@ -969,6 +971,7 @@
 @yield('content')
 </main>
 
+@unless(request()->is('admin*'))
 <footer class="footer">
     <div class="footer-inner">
         <div class="footer-brand">
@@ -1034,6 +1037,7 @@
         © {{ date('Y') }} Healthcare Pharmacy. All rights reserved.
     </div>
 </footer>
+@endunless
 
 <script src="{{ asset('js/app.js') }}"></script>
 <script>
