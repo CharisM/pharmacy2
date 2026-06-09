@@ -1,5 +1,5 @@
-@extends('layouts.app')
-@section('title', 'Home – Healthcare Pharmacy')
+﻿@extends('layouts.app')
+@section('title', 'Home â€“ Healthcare Pharmacy')
 
 @push('styles')
 <style>
@@ -466,103 +466,6 @@
         font-size: 15px;
     }
 
-    .products-grid {
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    }
-
-    .product-card {
-        background: linear-gradient(180deg, #f4fdf7 0%, #ffffff 100%);
-        border: 1px solid var(--border);
-        border-radius: 28px;
-        overflow: hidden;
-        display: flex;
-        flex-direction: column;
-        min-height: 340px;
-        box-shadow: 0 20px 45px rgba(15, 23, 42, 0.06);
-    }
-
-    .product-card-body {
-        padding: 22px;
-        display: grid;
-        gap: 18px;
-        flex: 1;
-    }
-
-    .product-card-top {
-        display: flex;
-        justify-content: space-between;
-        flex-wrap: wrap;
-        gap: 12px;
-        align-items: flex-start;
-    }
-
-    .product-category {
-        font-size: 13px;
-        color: var(--accent-dark);
-        font-weight: 700;
-        letter-spacing: 0.15em;
-        text-transform: uppercase;
-    }
-
-    .product-name {
-        margin: 0;
-        font-size: 18px;
-        color: var(--text);
-        font-weight: 800;
-        line-height: 1.3;
-    }
-
-    .product-pricing {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        flex-wrap: wrap;
-    }
-
-    .product-pricing strong {
-        color: var(--accent-dark);
-        font-size: 20px;
-    }
-
-    .product-old-price {
-        color: var(--muted);
-        text-decoration: line-through;
-        font-size: 14px;
-    }
-
-    .product-rating {
-        color: var(--accent-dark);
-        font-size: 13px;
-        font-weight: 700;
-    }
-
-    .product-card-actions {
-        padding: 0 22px 22px;
-    }
-
-    .btn-add {
-        width: 100%;
-        background: #ffffff;
-        color: var(--accent-dark);
-        border: 1px solid rgba(16, 163, 127, 0.2);
-        padding: 12px 18px;
-        border-radius: 16px;
-    }
-
-    .btn-add:hover {
-        background: rgba(16, 163, 127, 0.08);
-    }
-
-    .product-card-icon {
-        width: 56px;
-        height: 56px;
-        border-radius: 18px;
-        background: var(--accent);
-        color: #ffffff;
-        display: grid;
-        place-items: center;
-        font-size: 24px;
-        margin: 0 auto;
     }
 
     @media (max-width: 980px) {
@@ -627,7 +530,7 @@
             <article class="carousel-slide" data-slide="2">
                 <div class="carousel-copy">
                     <h3>Trusted Care from Certified Pharmacists</h3>
-                    <p>Share confidence with expert support and genuine products. This slide showcases the pharmacy’s care promise and product quality.</p>
+                    <p>Share confidence with expert support and genuine products. This slide showcases the pharmacyâ€™s care promise and product quality.</p>
                     <a href="{{ route('contact') }}" class="btn-primary">Contact Support</a>
                 </div>
                 <div class="carousel-image">

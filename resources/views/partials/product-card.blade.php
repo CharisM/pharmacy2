@@ -1,69 +1,60 @@
 @php
     $productId = data_get($product, 'id');
-    $category = data_get($product, 'category');
-    $name = data_get($product, 'name');
-    $price = data_get($product, 'price', 0);
-    $oldPrice = data_get($product, 'old_price');
-    $image = data_get($product, 'image');
-
-    // Determine image URL: allow absolute URLs or storage paths
-    if (!empty($image)) {
-        if (Str::startsWith($image, ['http://', 'https://'])) {
-            $imageUrl = $image;
-        } else {
-            $imageUrl = asset('storage/' . ltrim($image, '/'));
-        }
-    } else {
-        $imageUrl = null;
-    }
+    $category  = data_get($product, 'category');
+    $name      = data_get($product, 'name');
+    $price     = data_get($product, 'price', 0);
+    $oldPrice  = data_get($product, 'old_price');
+    $imageUrl  = is_object($product) ? optional($product)->image_url : null;
 @endphp
 
 <article class="product-card">
-    <div class="product-image">
-        @if (!empty($imageUrl))
+    {{-- Image --}}
+    <div class="pc-image">
+        @if ($imageUrl)
             <img src="{{ $imageUrl }}" alt="{{ $name }}">
         @else
-            <div class="product-image-placeholder" aria-hidden="true">
-                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                    <rect x="0" y="0" width="24" height="24" rx="6" fill="white" opacity="0.08"/>
-                    <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <div class="pc-image-placeholder">
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="3" y="3" width="18" height="18" rx="4"/><path d="M3 9l4-4 4 4 4-4 4 4"/>
+                    <circle cx="8.5" cy="14.5" r="1.5"/>
                 </svg>
             </div>
         @endif
-        <button type="button" class="img-add-btn" aria-label="Quick add">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 5v14M5 12h14" />
-            </svg>
-        </button>
     </div>
 
-    <div class="product-card-body">
-        <div class="product-card-top">
-            <div>
-                <div class="product-category">{{ $category }}</div>
-                <h3 class="product-name">{{ $name }}</h3>
-            </div>
-        </div>
+    {{-- Body --}}
+    <div class="pc-body">
+        <span class="pc-category">{{ $category }}</span>
+        <h3 class="pc-name">{{ $name }}</h3>
 
-        <div class="product-pricing">
+        <div class="pc-pricing">
             <strong>₱{{ number_format($price, 2) }}</strong>
-
             @if (!empty($oldPrice))
-                <span class="product-old-price">
-                    ₱{{ number_format($oldPrice, 2) }}
-                </span>
+                <span class="pc-old-price">₱{{ number_format($oldPrice, 2) }}</span>
             @endif
         </div>
     </div>
 
-    <div class="product-card-actions">
+    {{-- Actions --}}
+    <div class="pc-actions">
         @auth
-            <form action="{{ route('cart.add', $productId) }}" method="POST">
+            <form action="{{ route('cart.add', $productId) }}" method="POST" class="pc-form">
                 @csrf
-                <button type="submit" class="btn-add small">Add</button>
+                <button type="submit" class="pc-btn pc-btn-cart">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+                    Add to Cart
+                </button>
+            </form>
+            <form action="{{ route('cart.buynow', $productId) }}" method="POST" class="pc-form">
+                @csrf
+                <button type="submit" class="pc-btn pc-btn-buynow">Buy Now</button>
             </form>
         @else
-            <a href="{{ route('login') }}" class="btn-add small">Add</a>
+            <a href="{{ route('login') }}" class="pc-btn pc-btn-cart">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+                Add to Cart
+            </a>
+            <a href="{{ route('login') }}" class="pc-btn pc-btn-buynow">Buy Now</a>
         @endauth
     </div>
 </article>

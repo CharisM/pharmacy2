@@ -2,13 +2,13 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Database\Factories\UserFactory;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
@@ -24,6 +24,7 @@ class User extends Authenticatable
         'password',
         'is_admin',
         'profile_picture',
+        'email_verified_at',
     ];
 
     /**
@@ -45,6 +46,7 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
+            'email_verification_code_expires_at' => 'datetime',
             'password' => 'hashed',
             'is_admin' => 'boolean',
         ];
@@ -57,8 +59,8 @@ class User extends Authenticatable
 
     public function getProfilePictureUrlAttribute(): string
     {
-        if ($this->profile_picture && file_exists(public_path('profile-photos/' . $this->profile_picture))) {
-            return asset('profile-photos/' . $this->profile_picture);
+        if ($this->profile_picture && file_exists(public_path('profile-photos/'.$this->profile_picture))) {
+            return asset('profile-photos/'.$this->profile_picture);
         }
 
         return asset('images/default-avatar.svg');

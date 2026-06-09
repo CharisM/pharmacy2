@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login – Healthcare Pharmacy</title>
+    <title>Admin Login – Healthcare Pharmacy</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
@@ -65,6 +65,23 @@
             letter-spacing: 0.5px;
         }
 
+        .admin-badge {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            background: #064e3b;
+            color: #6ee7b7;
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            padding: 5px 14px;
+            border-radius: 20px;
+            margin: 0 auto 18px;
+            width: fit-content;
+        }
+
         .auth-card h2 {
             font-size: 24px;
             font-weight: 800;
@@ -89,16 +106,6 @@
             background: #fee2e2;
             color: #b91c1c;
             border: 1px solid #fca5a5;
-            border-radius: 8px;
-            padding: 10px 14px;
-            font-size: 13px;
-            margin-bottom: 16px;
-        }
-
-        .alert-success {
-            background: #dcfce7;
-            color: #166534;
-            border: 1px solid #86efac;
             border-radius: 8px;
             padding: 10px 14px;
             font-size: 13px;
@@ -165,7 +172,7 @@
         .btn-primary {
             width: 100%;
             padding: 13px;
-            background: #059669;
+            background: #064e3b;
             color: #fff;
             border: none;
             border-radius: 10px;
@@ -178,7 +185,7 @@
         }
 
         .btn-primary:hover {
-            background: #047857;
+            background: #022c22;
             transform: translateY(-1px);
         }
 
@@ -215,9 +222,11 @@
             <span class="logo-name">HEALTHCARE PHARMACY</span>
         </div>
 
-        <h2>Login to <span>Healthcare</span><br>Pharmacy</h2>
+        <div class="admin-badge">⚙ Admin Portal</div>
 
-        <p class="subtitle">Enter your credentials to access the system</p>
+        <h2>Admin <span>Login</span></h2>
+
+        <p class="subtitle">Enter your admin credentials to access the dashboard</p>
 
         @if ($errors->any())
             <div class="alert-danger">
@@ -225,19 +234,7 @@
             </div>
         @endif
 
-        @if (session('status') === 'email-verified')
-            <div class="alert-success">
-                Your email has been verified. You can now log in.
-            </div>
-        @endif
-
-        @if (session('unverified'))
-            <div class="alert-danger">
-                Please verify your email address before logging in.
-            </div>
-        @endif
-
-        <form action="{{ route('login') }}" method="POST">
+        <form action="{{ route('admin.login') }}" method="POST">
             @csrf
 
             <div class="form-group">
@@ -246,7 +243,7 @@
                     type="email"
                     id="email"
                     name="email"
-                    placeholder="Email address"
+                    placeholder="Admin email address"
                     value="{{ old('email') }}"
                     class="{{ $errors->has('email') ? 'is-invalid' : '' }}"
                     required
@@ -276,12 +273,12 @@
                 <a href="#">Forgot your password?</a>
             </div>
 
-            <button type="submit" class="btn-primary">Log In</button>
+            <button type="submit" class="btn-primary">Access Dashboard</button>
         </form>
 
         <div class="auth-divider">
-            Don't have an account?
-            <a href="{{ route('register') }}">Sign up</a>
+            Not an admin?
+            <a href="{{ route('login') }}">User login</a>
         </div>
 
     </div>

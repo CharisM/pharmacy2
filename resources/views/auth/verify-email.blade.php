@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login – Healthcare Pharmacy</title>
+    <title>Verify Email - Healthcare Pharmacy</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
@@ -37,10 +37,11 @@
             border-radius: 20px;
             padding: 44px 40px;
             width: 100%;
-            max-width: 420px;
+            max-width: 460px;
             box-shadow: 0 8px 40px rgba(5, 150, 105, 0.18),
                         0 2px 8px rgba(0,0,0,0.06);
             border: 1.5px solid #a7f3d0;
+            text-align: center;
         }
 
         .auth-logo {
@@ -65,34 +66,28 @@
             letter-spacing: 0.5px;
         }
 
-        .auth-card h2 {
+        h2 {
             font-size: 24px;
             font-weight: 800;
             color: #064e3b;
-            text-align: center;
-            margin-bottom: 6px;
-            line-height: 1.3;
+            margin-bottom: 10px;
         }
 
-        .auth-card h2 span {
+        h2 span {
             color: #059669;
         }
 
         .subtitle {
-            text-align: center;
             color: #6b7280;
             font-size: 14px;
-            margin-bottom: 28px;
+            line-height: 1.6;
+            margin-bottom: 20px;
         }
 
-        .alert-danger {
-            background: #fee2e2;
-            color: #b91c1c;
-            border: 1px solid #fca5a5;
-            border-radius: 8px;
-            padding: 10px 14px;
-            font-size: 13px;
-            margin-bottom: 16px;
+        .email-address {
+            color: #065f46;
+            font-weight: 800;
+            word-break: break-word;
         }
 
         .alert-success {
@@ -103,10 +98,23 @@
             padding: 10px 14px;
             font-size: 13px;
             margin-bottom: 16px;
+            text-align: left;
+        }
+
+        .alert-danger {
+            background: #fee2e2;
+            color: #b91c1c;
+            border: 1px solid #fca5a5;
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-size: 13px;
+            margin-bottom: 16px;
+            text-align: left;
         }
 
         .form-group {
-            margin-bottom: 18px;
+            margin-bottom: 16px;
+            text-align: left;
         }
 
         .form-group label {
@@ -119,14 +127,17 @@
 
         .form-group input {
             width: 100%;
-            padding: 11px 14px;
+            padding: 13px 14px;
             border: 1.5px solid #6ee7b7;
             border-radius: 10px;
             background: #f0fdf4;
             font-family: 'Nunito', sans-serif;
-            font-size: 14px;
+            font-size: 18px;
+            font-weight: 800;
             color: #064e3b;
+            letter-spacing: 0;
             outline: none;
+            text-align: center;
             transition: border-color 0.2s, box-shadow 0.2s;
         }
 
@@ -136,38 +147,23 @@
             background: #fff;
         }
 
-        .form-group input.is-invalid {
-            border-color: #f87171;
-        }
-
         .invalid-feedback {
             color: #dc2626;
             font-size: 12px;
             margin-top: 4px;
+            text-align: left;
         }
 
-        .form-footer {
-            text-align: right;
-            margin-bottom: 22px;
+        .actions {
+            display: grid;
+            gap: 12px;
+            margin-top: 22px;
         }
 
-        .form-footer a {
-            font-size: 13px;
-            color: #059669;
-            text-decoration: none;
-            font-weight: 600;
-        }
-
-        .form-footer a:hover {
-            text-decoration: underline;
-        }
-
-        .btn-primary {
+        .btn-primary,
+        .btn-link {
             width: 100%;
             padding: 13px;
-            background: #059669;
-            color: #fff;
-            border: none;
             border-radius: 10px;
             font-family: 'Nunito', sans-serif;
             font-size: 15px;
@@ -177,47 +173,51 @@
             letter-spacing: 0.3px;
         }
 
+        .btn-primary {
+            background: #059669;
+            color: #fff;
+            border: none;
+        }
+
         .btn-primary:hover {
             background: #047857;
             transform: translateY(-1px);
         }
 
-        .auth-divider {
-            text-align: center;
-            margin-top: 22px;
-            font-size: 13px;
-            color: #6b7280;
-        }
-
-        .auth-divider a {
+        .btn-link {
+            background: transparent;
             color: #059669;
-            font-weight: 700;
+            border: 1.5px solid #6ee7b7;
+            display: block;
             text-decoration: none;
         }
 
-        .auth-divider a:hover {
-            text-decoration: underline;
+        .btn-link:hover {
+            background: #ecfdf5;
         }
     </style>
 </head>
 
 <body>
-
 <div class="auth-page">
     <div class="auth-card">
-
         <div class="auth-logo">
             <img
                 src="{{ asset('images/logopharmacy.png') }}"
                 alt="Healthcare Pharmacy Logo"
                 class="logo-image"
             >
+
             <span class="logo-name">HEALTHCARE PHARMACY</span>
         </div>
 
-        <h2>Login to <span>Healthcare</span><br>Pharmacy</h2>
+        <h2>Verify Your <span>Email</span></h2>
 
-        <p class="subtitle">Enter your credentials to access the system</p>
+        @if (session('status') === 'verification-code-sent')
+            <div class="alert-success">
+                A new verification code has been sent to your email address.
+            </div>
+        @endif
 
         @if ($errors->any())
             <div class="alert-danger">
@@ -225,67 +225,66 @@
             </div>
         @endif
 
-        @if (session('status') === 'email-verified')
-            <div class="alert-success">
-                Your email has been verified. You can now log in.
-            </div>
-        @endif
+        <p class="subtitle">
+            We sent a 6-digit verification code to
+            <span class="email-address">{{ $email }}</span>.
+            Enter the code below to verify your account.
+        </p>
 
-        @if (session('unverified'))
-            <div class="alert-danger">
-                Please verify your email address before logging in.
-            </div>
-        @endif
+        <div class="actions">
+            <form action="{{ route('verification.verify') }}" method="POST">
+                @csrf
 
-        <form action="{{ route('login') }}" method="POST">
-            @csrf
+                <div class="form-group">
+                    <label for="code">Verification Code</label>
+                    <input
+                        type="text"
+                        id="code"
+                        name="code"
+                        inputmode="numeric"
+                        maxlength="6"
+                        minlength="6"
+                        pattern="[0-9]{6}"
+                        placeholder="000000"
+                        value="{{ old('code') }}"
+                        oninput="this.value=this.value.replace(/[^0-9]/g,'')"
+                        required
+                        autofocus
+                    >
 
-            <div class="form-group">
-                <label for="email">Email address</label>
-                <input
-                    type="email"
-                    id="email"
-                    name="email"
-                    placeholder="Email address"
-                    value="{{ old('email') }}"
-                    class="{{ $errors->has('email') ? 'is-invalid' : '' }}"
-                    required
-                    autofocus
-                >
-                @error('email')
-                    <div class="invalid-feedback">{{ $message }}</div>
-                @enderror
-            </div>
+                    @error('code')
+                        <div class="invalid-feedback">
+                            {{ $message }}
+                        </div>
+                    @enderror
+                </div>
 
-            <div class="form-group">
-                <label for="password">Password</label>
-                <input
-                    type="password"
-                    id="password"
-                    name="password"
-                    placeholder="Password"
-                    class="{{ $errors->has('password') ? 'is-invalid' : '' }}"
-                    required
-                >
-                @error('password')
-                    <div class="invalid-feedback">{{ $message }}</div>
-                @enderror
-            </div>
+                <button type="submit" class="btn-primary">
+                    Verify Code
+                </button>
+            </form>
 
-            <div class="form-footer">
-                <a href="#">Forgot your password?</a>
-            </div>
+            <form action="{{ route('verification.send') }}" method="POST">
+                @csrf
+                <button type="submit" class="btn-primary">
+                    Resend Code
+                </button>
+            </form>
 
-            <button type="submit" class="btn-primary">Log In</button>
-        </form>
-
-        <div class="auth-divider">
-            Don't have an account?
-            <a href="{{ route('register') }}">Sign up</a>
+            @if (auth()->check())
+                <form action="{{ route('logout') }}" method="POST">
+                    @csrf
+                    <button type="submit" class="btn-link">
+                        Log Out
+                    </button>
+                </form>
+            @else
+                <a href="{{ route('login') }}" class="btn-link">
+                    Back to Login
+                </a>
+            @endif
         </div>
-
     </div>
 </div>
-
 </body>
 </html>

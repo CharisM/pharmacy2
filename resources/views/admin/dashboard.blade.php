@@ -1,300 +1,526 @@
 @extends('layouts.app')
 
 @section('content')
-    <section class="admin-shell">
-        <aside class="admin-sidebar">
-            <div class="admin-profile">
-                <img src="{{ auth()->user()->profile_picture_url }}" alt="{{ auth()->user()->name }}" />
-                <div>
-                    <h2>{{ auth()->user()->name }}</h2>
-                    <p>Administrator</p>
-                </div>
-            </div>
-        </aside>
+<div class="admin-shell">
+    @include('partials.admin-sidebar')
 
-        <main class="admin-main">
-            <div class="page-heading">
-                <div>
-                    <h1>Stock Manager</h1>
-                    <p>Update inventory and image path for each product from one place.</p>
-                </div>
+    <main class="admin-main">
+        <div class="page-header">
+            <div>
+                <h1>Dashboard</h1>
+                <p>Manage your pharmacy inventory and operations</p>
             </div>
+            <div class="header-badge">
+                <span id="liveIndicator" class="live-dot"></span>
+                <span id="liveLabel" style="font-size:0.8rem;color:#64748b;font-weight:600;">Live</span>
+            </div>
+        </div>
 
-            <div class="status-cards">
-                <div class="admin-card">
-                    <h3>Products</h3>
+        @if(session('success'))
+            <div class="alert-success">✅ {{ session('success') }}</div>
+        @endif
+
+        <div class="stats-grid">
+            <div class="stat-card" style="--accent:#6366f1;">
+                <div class="stat-icon" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="26" height="26">
+                        <path d="M21 16V8a2 2 0 0 0-1-1.73L13 2.27a2 2 0 0 0-2 0L4 6.27A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                    </svg>
+                </div>
+                <div class="stat-body">
+                    <p>Total Products</p>
                     <strong>{{ $totalProducts }}</strong>
-                    <span>Total SKUs</span>
                 </div>
+            </div>
 
-                <div class="admin-card">
-                    <h3>Total Stock</h3>
+            <div class="stat-card" style="--accent:#0ea5e9;">
+                <div class="stat-icon" style="background:linear-gradient(135deg,#0ea5e9,#06b6d4);">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="26" height="26">
+                        <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>
+                    </svg>
+                </div>
+                <div class="stat-body">
+                    <p>Total Stock</p>
                     <strong>{{ $totalStock }}</strong>
-                    <span>Inventory quantity</span>
                 </div>
             </div>
 
-            <div class="stock-table-card">
-                <h2>Stock Items</h2>
-                <p>Edit each product's stock count and image path on a per-item basis.</p>
+            <div class="stat-card" style="--accent:#10b981;">
+                <div class="stat-icon" style="background:linear-gradient(135deg,#10b981,#34d399);">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="26" height="26">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                </div>
+                <div class="stat-body">
+                    <p>Active Users</p>
+                    <strong>{{ $totalUsers }}</strong>
+                </div>
+            </div>
 
-                <div class="stock-table-wrapper">
-                    <table class="stock-table">
-                        <thead>
-                            <tr>
-                                <th>Product</th>
-                                <th>Category</th>
-                                <th>Stock</th>
-                                <th>Image Path</th>
-                                <th>Action</th>
+            <div class="stat-card" style="--accent:#f43f5e;">
+                <div class="stat-icon" style="background:linear-gradient(135deg,#f43f5e,#fb7185);">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="26" height="26">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                    </svg>
+                </div>
+                <div class="stat-body">
+                    <p>Out of Stock</p>
+                    <strong>{{ $outOfStock }}</strong>
+                </div>
+            </div>
+        </div>
+
+        <div class="content-card">
+            <div class="card-header">
+                <div>
+                    <h2>Stock Inventory</h2>
+                    <p>Manage product stock and image paths</p>
+                </div>
+            </div>
+
+            <div class="table-wrap">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Category</th>
+                            <th>Stock</th>
+                            <th>Image</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse ($products as $product)
+                            <tr id="row-{{ $product->id }}">
+                                <td class="cell-product">
+                                    <img src="{{ $product->image_url ?? asset('images/default-avatar.svg') }}"
+                                         alt="{{ $product->name }}" />
+                                    <span>{{ $product->name }}</span>
+                                </td>
+                                <td><span class="badge">{{ $product->category }}</span></td>
+                                <td>
+                                    <span class="stock-val {{ $product->stock == 0 ? 'stock-zero' : ($product->stock < 10 ? 'stock-low' : 'stock-ok') }}">
+                                        {{ $product->stock }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="img-path">{{ $product->image ? basename($product->image) : '—' }}</span>
+                                </td>
+                                <td>
+                                    <button class="btn-edit" onclick="openEdit({{ $product->id }}, {{ $product->stock }}, '{{ addslashes($product->image ?? '') }}')">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                                        </svg>
+                                        Edit
+                                    </button>
+                                </td>
                             </tr>
-                        </thead>
-                        <tbody>
-                            @forelse ($products as $product)
-                                <tr>
-                                    <td class="product-cell">
-                                        <img src="{{ $product->image ? (preg_match('/^https?:\/\//', $product->image) ? $product->image : asset($product->image)) : asset('images/default-avatar.svg') }}" alt="{{ $product->name }}" />
-                                        <span>{{ $product->name }}</span>
-                                    </td>
-                                    <td>{{ $product->category }}</td>
-                                    <td>
-                                        <form action="{{ route('admin.products.update', $product) }}" method="POST" class="product-update-form">
-                                            @csrf
-                                            @method('PUT')
-                                            <input type="number" name="stock" min="0" value="{{ $product->stock }}" class="stock-input" />
-                                    </td>
-                                    <td>
-                                            <input type="text" name="image" value="{{ $product->image }}" placeholder="image path or url" class="image-input" />
-                                    </td>
-                                    <td>
-                                            <button type="submit" class="btn-save">Save</button>
-                                        </form>
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="5">No products found in inventory.</td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-
-                <div class="pagination-links">
-                    {{ $products->links() }}
-                </div>
+                        @empty
+                            <tr><td colspan="5" class="empty-state">No products found</td></tr>
+                        @endforelse
+                    </tbody>
+                </table>
             </div>
-        </main>
-    </section>
 
-    <style>
-        .admin-shell {
-            display: grid;
-            grid-template-columns: 280px 1fr;
-            gap: 24px;
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 32px 20px;
-            min-height: calc(100vh - 40px);
-        }
+            <div class="pagination-wrap">
+                <span class="pag-info">
+                    Showing {{ $products->firstItem() }}–{{ $products->lastItem() }} of {{ $products->total() }}
+                </span>
+                {{ $products->links() }}
+            </div>
+        </div>
+    </main>
+</div>
 
-        .admin-sidebar {
-            display: flex;
-            flex-direction: column;
-            gap: 24px;
-            background: #ffffff;
-            border-radius: 24px;
-            border: 1px solid #e5e7eb;
-            padding: 24px;
-            box-shadow: 0 18px 40px rgba(15, 23, 42, 0.06);
-            position: sticky;
-            top: 24px;
-            height: fit-content;
-        }
+<!-- Edit Modal -->
+<div id="editModal" class="modal-overlay" style="display:none;" onclick="if(event.target===this)closeEdit()">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3>Edit Product</h3>
+            <button class="modal-close" onclick="closeEdit()">✕</button>
+        </div>
+        <form id="editForm" method="POST" enctype="multipart/form-data">
+            @csrf
+            @method('PUT')
+            <div class="form-group">
+                <label>Stock</label>
+                <input type="number" name="stock" id="editStock" min="0" required class="form-input" />
+            </div>
+            <div class="form-group">
+                <label>Upload Image</label>
+                <input type="file" name="image_upload" id="editImageUpload" accept="image/*" class="form-input" />
+            </div>
+            <div class="form-group">
+                <label>Or Image Path / URL</label>
+                <input type="text" name="image" id="editImage" class="form-input" placeholder="e.g. images/product.jpg" />
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn-cancel" onclick="closeEdit()">Cancel</button>
+                <button type="submit" class="btn-save">Save Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
 
-        .admin-profile {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-        }
+<style>
+    * { box-sizing: border-box; }
 
-        .admin-profile img {
-            width: 72px;
-            height: 72px;
-            object-fit: cover;
-            border-radius: 18px;
-            border: 1px solid #e5e7eb;
-        }
+    body { margin: 0; font-family: 'Inter', system-ui, sans-serif; background: #f1f5f9; }
 
-        .admin-profile h2 {
-            margin: 0 0 4px;
-            font-size: 1.2rem;
-        }
+    .admin-shell {
+        display: flex;
+        min-height: 100vh;
+    }
 
-        .admin-profile p {
-            margin: 0;
-            color: #6b7280;
-            font-size: 0.95rem;
-        }
+    .admin-main {
+        margin-left: 260px;
+        padding: 28px 30px;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 22px;
+    }
 
+    /* Header */
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
 
-        .admin-main {
-            display: flex;
-            flex-direction: column;
-            gap: 24px;
-        }
+    .page-header h1 {
+        margin: 0 0 4px;
+        font-size: 1.8rem;
+        font-weight: 800;
+        color: #0f172a;
+    }
 
-        .page-heading h1 {
-            margin: 0 0 8px;
-            font-size: 2rem;
-        }
+    .page-header p { margin: 0; color: #64748b; font-size: 0.9rem; }
 
-        .page-heading p {
-            margin: 0;
-            color: #475569;
-        }
+    .header-badge {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        padding: 6px 14px;
+        border-radius: 20px;
+    }
 
-        .status-cards {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 16px;
-        }
+    .live-dot {
+        width: 8px; height: 8px;
+        background: #10b981;
+        border-radius: 50%;
+        animation: pulse 1.5s ease-in-out infinite;
+    }
 
-        .admin-card {
-            padding: 22px;
-            border-radius: 20px;
-            background: #ffffff;
-            border: 1px solid #e5e7eb;
-            box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
-        }
+    @keyframes pulse {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.5; transform: scale(1.4); }
+    }
 
-        .admin-card h3 {
-            margin: 0 0 8px;
-            color: #111827;
-            font-size: 1rem;
-        }
+    /* Alert */
+    .alert-success {
+        padding: 12px 16px;
+        background: #f0fdf4;
+        color: #166534;
+        border: 1px solid #bbf7d0;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
 
-        .admin-card strong {
-            display: block;
-            font-size: 2rem;
-            margin-bottom: 6px;
-        }
+    /* Stats */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+    }
 
-        .admin-card span {
-            color: #6b7280;
-            font-size: 0.95rem;
-        }
+    .stat-card {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 20px;
+        background: #fff;
+        border-radius: 14px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 1px 6px rgba(0,0,0,0.04);
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
 
-        .stock-table-card {
-            background: #ffffff;
-            border-radius: 24px;
-            padding: 24px;
-            border: 1px solid #e5e7eb;
-            box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
-        }
+    .stat-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+    }
 
-        .stock-table-card h2 {
-            margin: 0 0 6px;
-            font-size: 1.25rem;
-        }
+    .stat-icon {
+        width: 52px; height: 52px;
+        border-radius: 12px;
+        display: flex; align-items: center; justify-content: center;
+        color: #fff;
+        flex-shrink: 0;
+    }
 
-        .stock-table-card p {
-            margin: 0 0 20px;
-            color: #6b7280;
-        }
+    .stat-body p { margin: 0 0 3px; color: #64748b; font-size: 0.82rem; font-weight: 500; }
 
-        .stock-table-wrapper {
-            overflow-x: auto;
-        }
+    .stat-body strong {
+        display: block;
+        font-size: 1.7rem;
+        font-weight: 800;
+        color: #0f172a;
+        line-height: 1;
+    }
 
-        .stock-table {
-            width: 100%;
-            border-collapse: collapse;
-            min-width: 860px;
-        }
+    /* Content Card */
+    .content-card {
+        background: #fff;
+        border-radius: 14px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 1px 6px rgba(0,0,0,0.04);
+        overflow: hidden;
+    }
 
-        .stock-table th,
-        .stock-table td {
-            padding: 16px 18px;
-            border-bottom: 1px solid #e5e7eb;
-            vertical-align: middle;
-        }
+    .card-header {
+        padding: 20px 24px;
+        border-bottom: 1px solid #f1f5f9;
+    }
 
-        .stock-table th {
-            text-align: left;
-            color: #374151;
-            font-size: 0.95rem;
-            font-weight: 700;
-        }
+    .card-header h2 { margin: 0 0 3px; font-size: 1.1rem; color: #0f172a; font-weight: 700; }
+    .card-header p { margin: 0; color: #64748b; font-size: 0.85rem; }
 
-        .product-cell {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
+    /* Table */
+    .table-wrap { overflow-x: auto; }
 
-        .product-cell img {
-            width: 56px;
-            height: 56px;
-            object-fit: cover;
-            border-radius: 16px;
-            border: 1px solid #e5e7eb;
-        }
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.88rem;
+    }
 
-        .stock-input,
-        .image-input {
-            width: 100%;
-            padding: 10px 12px;
-            border: 1px solid #d1d5db;
-            border-radius: 14px;
-            font-size: 0.95rem;
-            color: #111827;
-            background: #f8fafc;
-        }
+    .data-table th {
+        padding: 13px 18px;
+        text-align: left;
+        background: #f8fafc;
+        color: #475569;
+        font-weight: 700;
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 2px solid #e2e8f0;
+    }
 
-        .image-input {
-            min-width: 240px;
-        }
+    .data-table td {
+        padding: 14px 18px;
+        border-bottom: 1px solid #f1f5f9;
+        color: #334155;
+        vertical-align: middle;
+    }
 
-        .btn-save {
-            padding: 10px 18px;
-            border-radius: 14px;
-            border: none;
-            background: #16a34a;
-            color: #ffffff;
-            font-weight: 700;
-            cursor: pointer;
-        }
+    .data-table tbody tr:hover { background: #f8fafc; }
 
-        .btn-save:hover {
-            background: #15803d;
-        }
+    .cell-product {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 600;
+        color: #0f172a;
+    }
 
-        .pagination-links {
-            margin-top: 18px;
-            display: flex;
-            justify-content: flex-end;
-        }
+    .cell-product img {
+        width: 38px; height: 38px;
+        object-fit: cover;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+    }
 
-        @media (max-width: 1024px) {
-            .admin-shell {
-                grid-template-columns: 1fr;
-            }
+    .badge {
+        padding: 3px 10px;
+        background: #eff6ff;
+        color: #1d4ed8;
+        border-radius: 20px;
+        font-size: 0.78rem;
+        font-weight: 600;
+    }
 
-            .admin-sidebar {
-                position: static;
-                top: auto;
-            }
-        }
+    .stock-val {
+        font-weight: 700;
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-size: 0.82rem;
+    }
+    .stock-ok   { background: #f0fdf4; color: #16a34a; }
+    .stock-low  { background: #fffbeb; color: #b45309; }
+    .stock-zero { background: #fff1f2; color: #e11d48; }
 
-        @media (max-width: 720px) {
-            .stock-table {
-                min-width: 100%;
-            }
+    .img-path {
+        font-size: 0.8rem;
+        color: #94a3b8;
+        max-width: 160px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        display: block;
+    }
 
-            .admin-nav a {
-                font-size: 0.95rem;
-            }
-        }
-    </style>
+    .btn-edit {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 7px 14px;
+        background: linear-gradient(135deg, #6366f1, #8b5cf6);
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.82rem;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-edit:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(99,102,241,0.4);
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 40px !important;
+        color: #94a3b8;
+    }
+
+    .pagination-wrap {
+        padding: 16px 20px;
+        border-top: 1px solid #f1f5f9;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .pag-info {
+        font-size: 0.8rem;
+        color: #94a3b8;
+        font-weight: 600;
+    }
+
+    /* Modal */
+    .modal-overlay {
+        position: fixed; inset: 0;
+        background: rgba(0,0,0,0.45);
+        display: flex; align-items: center; justify-content: center;
+        z-index: 9999;
+        backdrop-filter: blur(3px);
+    }
+
+    .modal-box {
+        background: #fff;
+        border-radius: 16px;
+        padding: 24px;
+        width: 100%;
+        max-width: 420px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+    .modal-header h3 { margin: 0; font-size: 1.1rem; color: #0f172a; }
+
+    .modal-close {
+        background: none; border: none;
+        font-size: 1.1rem; cursor: pointer;
+        color: #94a3b8; padding: 2px 6px;
+        border-radius: 6px;
+    }
+    .modal-close:hover { background: #f1f5f9; color: #475569; }
+
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; font-size: 0.82rem; font-weight: 600; color: #475569; margin-bottom: 6px; }
+
+    .form-input {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        color: #0f172a;
+        background: #f8fafc;
+        transition: all 0.2s;
+    }
+
+    .form-input:focus {
+        outline: none;
+        border-color: #6366f1;
+        background: #fff;
+        box-shadow: 0 0 0 3px rgba(99,102,241,0.12);
+    }
+
+    .modal-actions {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+        margin-top: 20px;
+    }
+
+    .btn-cancel {
+        padding: 9px 18px;
+        background: #f1f5f9;
+        color: #475569;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.88rem;
+        cursor: pointer;
+    }
+    .btn-cancel:hover { background: #e2e8f0; }
+
+    .btn-save {
+        padding: 9px 18px;
+        background: linear-gradient(135deg, #6366f1, #8b5cf6);
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 0.88rem;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .btn-save:hover { box-shadow: 0 4px 12px rgba(99,102,241,0.4); }
+
+    @media (max-width: 1200px) {
+        .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (max-width: 768px) {
+        .admin-main { margin-left: 0; padding: 16px; }
+        .stats-grid { grid-template-columns: 1fr 1fr; }
+    }
+</style>
+
+<script>
+    function openEdit(id, stock, image) {
+        document.getElementById('editForm').action = `/admin/products/${id}`;
+        document.getElementById('editStock').value = stock;
+        document.getElementById('editImage').value = image;
+        document.getElementById('editModal').style.display = 'flex';
+    }
+
+    function closeEdit() {
+        document.getElementById('editModal').style.display = 'none';
+    }
+
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') closeEdit();
+    });
+</script>
 @endsection

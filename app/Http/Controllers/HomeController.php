@@ -14,7 +14,6 @@ class HomeController extends Controller
             ['name' => 'Baby Care',       'icon' => 'baby',        'color' => '#e8f5e9'],
             ['name' => 'Wellness',        'icon' => 'leaf',        'color' => '#e8f5e9'],
             ['name' => 'Vitamins',        'icon' => 'flask',       'color' => '#e8f5e9'],
-            ['name' => 'Health Devices',  'icon' => 'heart-pulse', 'color' => '#e8f5e9'],
             ['name' => 'First Aid',       'icon' => 'first-aid',   'color' => '#e8f5e9'],
         ];
 

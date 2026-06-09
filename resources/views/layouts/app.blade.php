@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -776,109 +776,26 @@
             }
         }
 
-                    /* =========================
-            SHOP + FEATURED PRODUCT FIX
-            DO NOT CHANGE DESIGN
-            ========================= */
-
-            .products-grid {
-                display: grid;
-                grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-                gap: 22px;
-                align-items: stretch;
-            }
-
-            /* ensures each product behaves like a card */
-            .products-grid > * {
-                display: flex;
-            }
-
-            /* unify shop + featured product card look */
-            .product-card {
-                background: #ffffff;
-                border: 1px solid rgba(15, 23, 42, 0.08);
-                border-radius: 28px;
-                padding: 22px;
-                box-shadow: 0 18px 40px rgba(15, 23, 42, 0.06);
-
-                display: flex;
-                flex-direction: column;
-                justify-content: space-between;
-            }
-
-            /* optional: makes Add button always aligned properly */
-          /* Featured Product Button Center Fix */
-.product-card-actions {
-    margin-top: 12px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-.product-card-actions .btn-add {
-    width: 140px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-}
-            
-            /* Product image placeholder and compact add button (scoped to shop page) */
-            .shop-page .product-image {
-                width: 100%;
-                height: 180px;
-                border-radius: 14px;
-                background: rgba(16, 163, 127, 0.06);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                overflow: hidden;
-                margin-bottom: 14px;
-            }
-
-            .shop-page .product-image img {
-                width: 100%;
-                height: 100%;
-                object-fit: cover;
-                display: block;
-            }
-            .shop-page .product-image-placeholder {
-                width: 96px;
-                height: 96px;
-                border-radius: 14px;
-                background: rgba(16, 163, 127, 0.95);
-                color: #ffffff;
-                display: grid;
-                place-items: center;
-                font-size: 28px;
-            }
-
-            .shop-page .product-image-placeholder svg {
-                color: #ffffff;
-                width: 40px;
-                height: 40px;
-            }
-
-            /* move Add button to bottom right and make compact (shop only) */
-            .shop-page .product-card-actions {
-                margin-top: 12px;
-                display: flex;
-                justify-content: flex-end;
-                align-items: center;
-                padding: 0 0 0 0;
-            }
-
-            .shop-page .product-card-actions .btn-add.small {
-                width: auto;
-                padding: 8px 12px;
-                border-radius: 10px;
-                background: var(--accent);
-                color: #ffffff;
-                border: none;
-                box-shadow: none;
-            }
-            
-
+        /* Product Card - unified design (home + categories) */
+        .products-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:22px; }
+        .product-card { background:linear-gradient(180deg,#f4fdf7 0%,#ffffff 100%); border:1px solid rgba(15,23,42,0.08); border-radius:28px; overflow:hidden; display:flex; flex-direction:column; box-shadow:0 20px 45px rgba(15,23,42,0.06); transition:transform 180ms ease,box-shadow 180ms ease; min-height:380px; }
+        .product-card:hover { transform:translateY(-4px); box-shadow:0 28px 56px rgba(15,23,42,0.10); }
+        .pc-image { width:100%; height:190px; flex-shrink:0; overflow:hidden; background:rgba(16,163,127,0.06); display:flex; align-items:center; justify-content:center; }
+        .pc-image img { width:100%; height:100%; object-fit:cover; display:block; }
+        .pc-image-placeholder { width:80px; height:80px; border-radius:20px; background:rgba(16,163,127,0.12); color:#047857; display:grid; place-items:center; }
+        .pc-body { padding:18px 20px 10px; flex:1; display:flex; flex-direction:column; gap:8px; }
+        .pc-category { font-size:12px; font-weight:700; color:#047857; letter-spacing:.14em; text-transform:uppercase; }
+        .pc-name { margin:0; font-size:17px; font-weight:800; color:#0f172a; line-height:1.3; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; min-height:2.6em; }
+        .pc-pricing { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:auto; padding-top:10px; }
+        .pc-pricing strong { color:#047857; font-size:19px; }
+        .pc-old-price { color:#475569; text-decoration:line-through; font-size:13px; }
+        .pc-actions { padding:12px 20px 18px; flex-shrink:0; display:flex; gap:8px; }
+        .pc-form { flex:1; }
+        .pc-btn { width:100%; padding:10px 14px; border-radius:12px; font-size:13px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:6px; border:none; transition:all 160ms ease; text-decoration:none; font-family:inherit; }
+        .pc-btn-cart { background:#ffffff; color:#047857; border:1.5px solid rgba(16,163,127,0.25); }
+        .pc-btn-cart:hover { background:rgba(16,163,127,0.08); border-color:rgba(16,163,127,0.5); }
+        .pc-btn-buynow { background:#16a34a; color:#ffffff; }
+        .pc-btn-buynow:hover { background:#047857; }
     </style>
     @stack('styles')
 </head>
@@ -1034,7 +951,7 @@
         </div>
     </div>
     <div class="footer-bottom">
-        © {{ date('Y') }} Healthcare Pharmacy. All rights reserved.
+        Â© {{ date('Y') }} Healthcare Pharmacy. All rights reserved.
     </div>
 </footer>
 @endunless
