@@ -234,9 +234,9 @@
                 <div class="form-grid-2">
                     <div>
                         <div class="form-field">
-                            <label>Name *</label>
-                            <input type="text" name="first_name"
-                                   value="{{ old('first_name', auth()->user()->name) }}"
+                            <label>Full Name *</label>
+                            <input type="text" name="full_name"
+                                   value="{{ old('full_name', auth()->user()->name) }}"
                                    required placeholder="Juan Dela Cruz">
                         </div>
                         <div class="form-field">
@@ -328,4 +328,27 @@
     @endif
 
 </div>
+
+{{-- Order Success Popup --}}
+@if(session('success'))
+<div id="orderSuccessOverlay" style="position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:9999;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);">
+    <div style="background:#fff;border-radius:20px;padding:40px 36px;max-width:380px;width:90%;text-align:center;box-shadow:0 32px 80px rgba(0,0,0,0.22);animation:popIn 0.25s ease;">
+        <div style="width:64px;height:64px;background:#f0fdf4;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 18px;">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <h2 style="margin:0 0 8px;font-size:22px;font-weight:900;color:#0f172a;">Order Placed!</h2>
+        <p style="margin:0 0 24px;color:#475569;font-size:14px;line-height:1.6;">Your order has been placed successfully.</p>
+        <a href="{{ route('home') }}" style="display:inline-block;padding:12px 32px;background:#16a34a;color:#fff;border-radius:10px;font-weight:800;font-size:15px;text-decoration:none;transition:background 150ms;" onmouseover="this.style.background='#047857'" onmouseout="this.style.background='#16a34a'">
+            Continue Shopping
+        </a>
+    </div>
+</div>
+<style>
+    @keyframes popIn {
+        from { opacity:0; transform:scale(0.88); }
+        to   { opacity:1; transform:scale(1); }
+    }
+</style>
+@endif
+
 @endsection

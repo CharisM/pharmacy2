@@ -14,7 +14,7 @@ class OrderController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'first_name'     => 'required|string|max:255',
+            'full_name'      => 'required|string|max:255',
             'address'        => 'required|string|max:255',
             'phone'          => 'required|string|max:30',
             'payment_method' => 'required|string',
@@ -72,8 +72,7 @@ class OrderController extends Controller
 
                 $order = Order::create([
                     'user_id'        => auth('web')->id(),
-                    'first_name'     => $request->first_name,
-                    'last_name'      => '',
+                    'full_name'      => $request->full_name,
                     'address'        => $request->address,
                     'phone'          => $request->phone,
                     'payment_method' => $request->payment_method,

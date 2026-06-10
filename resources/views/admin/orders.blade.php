@@ -77,7 +77,7 @@
                         <tr>
                             <td class="td-id">#{{ str_pad($order->id, 5, '0', STR_PAD_LEFT) }}</td>
                             <td class="td-customer">
-                                <span class="customer-name">{{ $order->first_name }} {{ $order->last_name }}</span>
+                                <span class="customer-name">{{ $order->full_name }}</span>
                                 @if($order->user)
                                     <span class="customer-email">{{ $order->user->email }}</span>
                                 @endif
@@ -212,7 +212,7 @@
 <script id="ordersJson" type="application/json">
 {!! json_encode($orders->map(fn($o) => [
     'id'             => $o->id,
-    'customer_name'  => $o->first_name . ' ' . $o->last_name,
+    'customer_name'  => $o->full_name,
     'email'          => $o->user->email ?? '—',
     'phone'          => $o->phone,
     'address'        => $o->address,

@@ -225,9 +225,9 @@
             </div>
         @endif
 
-        @if (session('status') === 'email-verified')
+        @if (session('status') === 'email-verified' || session('status') === 'account-verified')
             <div class="alert-success">
-                Your email has been verified. You can now log in.
+                ✅ Your email has been verified. You can now log in.
             </div>
         @endif
 
