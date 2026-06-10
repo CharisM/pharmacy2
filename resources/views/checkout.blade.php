@@ -232,34 +232,32 @@
             </div>
             <div class="co-card-body">
                 <div class="form-grid-2">
-                    <div class="form-field">
-                        <label>First Name *</label>
-                        <input type="text" name="first_name"
-                               value="{{ old('first_name', explode(' ', auth()->user()->name)[0]) }}"
-                               required placeholder="Juan">
+                    <div>
+                        <div class="form-field">
+                            <label>Name *</label>
+                            <input type="text" name="first_name"
+                                   value="{{ old('first_name', auth()->user()->name) }}"
+                                   required placeholder="Juan Dela Cruz">
+                        </div>
+                        <div class="form-field">
+                            <label>Phone Number *</label>
+                            <input type="tel" name="phone"
+                                   value="{{ old('phone') }}"
+                                   required placeholder="+63 9XX XXX XXXX">
+                        </div>
                     </div>
-                    <div class="form-field">
-                        <label>Last Name *</label>
-                        <input type="text" name="last_name"
-                               value="{{ old('last_name', implode(' ', array_slice(explode(' ', auth()->user()->name), 1))) }}"
-                               required placeholder="Dela Cruz">
+                    <div>
+                        <div class="form-field">
+                            <label>Complete Address *</label>
+                            <input type="text" name="address"
+                                   value="{{ old('address') }}"
+                                   required placeholder="House No., Street, Barangay, City, Province">
+                        </div>
+                        <div class="form-field">
+                            <label>Order Notes <span style="font-weight:400;color:#94a3b8;">(optional)</span></label>
+                            <textarea name="notes" placeholder="Special instructions, preferred delivery time, etc.">{{ old('notes') }}</textarea>
+                        </div>
                     </div>
-                </div>
-                <div class="form-field">
-                    <label>Complete Address *</label>
-                    <input type="text" name="address"
-                           value="{{ old('address') }}"
-                           required placeholder="House No., Street, Barangay, City, Province">
-                </div>
-                <div class="form-field">
-                    <label>Phone Number *</label>
-                    <input type="tel" name="phone"
-                           value="{{ old('phone') }}"
-                           required placeholder="+63 9XX XXX XXXX">
-                </div>
-                <div class="form-field">
-                    <label>Order Notes <span style="font-weight:400;color:#94a3b8;">(optional)</span></label>
-                    <textarea name="notes" placeholder="Special instructions, preferred delivery time, etc.">{{ old('notes') }}</textarea>
                 </div>
             </div>
         </div>
@@ -290,15 +288,7 @@
                             <div class="pay-option-sub">Pay via GCash mobile wallet</div>
                         </div>
                     </label>
-                    <label class="pay-option">
-                        <input type="radio" name="payment_method" value="card"
-                               {{ old('payment_method') == 'card' ? 'checked' : '' }}>
-                        <span class="pay-option-icon">💳</span>
-                        <div>
-                            <div class="pay-option-label">Credit / Debit Card</div>
-                            <div class="pay-option-sub">Visa, Mastercard, and more</div>
-                        </div>
-                    </label>
+
                 </div>
             </div>
         </div>
