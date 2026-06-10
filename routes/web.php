@@ -68,9 +68,10 @@ Route::middleware(['auth:admin', 'verified', 'admin'])
     ->group(function () {
         Route::get('/',      [AdminController::class, 'index'])->name('dashboard');
         Route::get('/users', [AdminController::class, 'users'])->name('users');
-        Route::post('/users/force-logout', [AdminController::class, 'forceLogoutAll'])->name('users.forceLogout');
-        Route::post('/users/reset',        [AdminController::class, 'resetUsers'])->name('users.reset');
-        Route::post('/users/clear-all',    [AdminController::class, 'clearAllUsers'])->name('users.clearAll');
+        Route::delete('/users/{user}',  [AdminController::class, 'deleteUser'])->name('users.delete');
+        Route::delete('/users',         [AdminController::class, 'deleteAllUsers'])->name('users.deleteAll');
+        Route::post('/users/reset',     [AdminController::class, 'resetUsers'])->name('users.reset');
+        Route::post('/users/clear-all', [AdminController::class, 'clearAllUsers'])->name('users.clearAll');
 
         // Products (Stock Inventory lives on dashboard)
         Route::get('/products',              fn() => redirect()->route('admin.dashboard'))->name('products');

@@ -208,22 +208,35 @@ class AdminController extends Controller
         return redirect()->route('admin.users')->with('success', 'All user sessions have been cleared.');
     }
 
-    public function forceLogoutAll()
+    public function deleteUser(User $user)
     {
-        DB::table('sessions')->where('user_id', '!=', auth('admin')->id())->delete();
+        DB::table('sessions')->where('user_id', $user->id)->delete();
+        DB::table('cart_items')->where('user_id', $user->id)->delete();
+        DB::table('password_reset_tokens')->where('email', $user->email)->delete();
+        DB::table('orders')->where('user_id', $user->id)->update(['user_id' => null]);
+        DB::table('messages')->where('user_id', $user->id)->update(['user_id' => null]);
+        $user->delete();
 
-        return redirect()->route('admin.users')->with('success', 'All users have been logged out.');
+        return redirect()->route('admin.users')->with('success', "User account has been deleted.");
+    }
+
+    public function deleteAllUsers()
+    {
+        $nonAdminIds = User::where('is_admin', false)->pluck('id');
+        $emails = User::where('is_admin', false)->pluck('email');
+
+        DB::table('sessions')->whereIn('user_id', $nonAdminIds)->delete();
+        DB::table('cart_items')->whereIn('user_id', $nonAdminIds)->delete();
+        DB::table('password_reset_tokens')->whereIn('email', $emails)->delete();
+        DB::table('orders')->whereIn('user_id', $nonAdminIds)->update(['user_id' => null]);
+        DB::table('messages')->whereIn('user_id', $nonAdminIds)->update(['user_id' => null]);
+        User::where('is_admin', false)->delete();
+
+        return redirect()->route('admin.users')->with('success', 'All user accounts have been deleted.');
     }
 
     public function clearAllUsers(Request $request)
     {
-        $nonAdminIds = User::where('is_admin', false)->pluck('id');
-
-        DB::table('cart_items')->whereIn('user_id', $nonAdminIds)->delete();
-        DB::table('sessions')->whereIn('user_id', $nonAdminIds)->delete();
-        DB::table('orders')->whereIn('user_id', $nonAdminIds)->update(['user_id' => null]);
-        User::where('is_admin', false)->delete();
-
-        return redirect()->route('login')->with('status', 'all-users-cleared');
+        return $this->deleteAllUsers();
     }
 }

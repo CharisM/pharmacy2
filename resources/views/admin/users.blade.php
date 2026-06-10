@@ -24,15 +24,6 @@
                     </svg>
                     Reset Active Users
                 </button>
-                <button class="btn-clear-all" onclick="document.getElementById('clearAllModal').style.display='flex'">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15">
-                        <polyline points="3 6 5 6 21 6"/>
-                        <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-                        <path d="M10 11v6M14 11v6"/>
-                        <path d="M9 6V4h6v2"/>
-                    </svg>
-                    Clear All Users
-                </button>
             </div>
         </div>
 
@@ -50,13 +41,14 @@
                     <h2>All Users</h2>
                     <p>{{ $users->total() }} registered user(s)</p>
                 </div>
-                <button class="btn-force-logout" onclick="document.getElementById('forceLogoutModal').style.display='flex'">
+                <button class="btn-force-logout" onclick="document.getElementById('deleteAllModal').style.display='flex'">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15">
-                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-                        <polyline points="16 17 21 12 16 7"/>
-                        <line x1="21" y1="12" x2="9" y2="12"/>
+                        <polyline points="3 6 5 6 21 6"/>
+                        <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                        <path d="M10 11v6M14 11v6"/>
+                        <path d="M9 6V4h6v2"/>
                     </svg>
-                    Force Logout All Users
+                    Delete All Users
                 </button>
             </div>
 
@@ -70,6 +62,7 @@
                             <th>Email Verified</th>
                             <th>Verified On</th>
                             <th>Status</th>
+                            <th>Action</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -105,9 +98,12 @@
                                         <span class="badge-slate">User</span>
                                     @endif
                                 </td>
+                                <td>
+                                    <button class="btn-logout-user" onclick="openDeleteModal({{ $user->id }}, '{{ addslashes($user->name) }}')">Delete User</button>
+                                </td>
                             </tr>
                         @empty
-                            <tr><td colspan="6" class="empty-state">No users found.</td></tr>
+                            <tr><td colspan="7" class="empty-state">No users found.</td></tr>
                         @endforelse
                     </tbody>
                 </table>
@@ -123,18 +119,38 @@
     </main>
 </div>
 
-<!-- Clear All Users Confirmation Modal -->
-<div id="clearAllModal" class="modal-overlay" style="display:none;" onclick="if(event.target===this)this.style.display='none'">
+<!-- Delete Single User Modal -->
+<div id="deleteUserModal" class="modal-overlay" style="display:none;" onclick="if(event.target===this)this.style.display='none'">
     <div class="modal-box">
         <div class="modal-header">
-            <h3>🗑️ Clear All Users</h3>
-            <button class="modal-close" onclick="document.getElementById('clearAllModal').style.display='none'">✕</button>
+            <h3>🗑️ Delete User</h3>
+            <button class="modal-close" onclick="document.getElementById('deleteUserModal').style.display='none'">✕</button>
         </div>
-        <p style="color:#475569;font-size:0.9rem;margin:0 0 20px;">This will <strong>permanently delete all non-admin user accounts</strong>, clear their cart items, and end all their sessions. Order history will be preserved. This action <strong>cannot be undone</strong>.</p>
-        <form method="POST" action="{{ route('admin.users.clearAll') }}">
+        <p style="color:#475569;font-size:0.9rem;margin:0 0 20px;">Are you sure you want to delete <strong id="deleteUserName"></strong>? This action <strong>cannot be undone</strong>. Orders and messages will be preserved.</p>
+        <form id="deleteUserForm" method="POST">
             @csrf
+            @method('DELETE')
             <div class="modal-actions">
-                <button type="button" class="btn-cancel" onclick="document.getElementById('clearAllModal').style.display='none'">Cancel</button>
+                <button type="button" class="btn-cancel" onclick="document.getElementById('deleteUserModal').style.display='none'">Cancel</button>
+                <button type="submit" class="btn-confirm-clear">Yes, Delete User</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Delete All Users Modal -->
+<div id="deleteAllModal" class="modal-overlay" style="display:none;" onclick="if(event.target===this)this.style.display='none'">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3>🗑️ Delete All Users</h3>
+            <button class="modal-close" onclick="document.getElementById('deleteAllModal').style.display='none'">✕</button>
+        </div>
+        <p style="color:#475569;font-size:0.9rem;margin:0 0 20px;">This will <strong>permanently delete all non-admin user accounts</strong>. Orders and messages will be preserved. This action <strong>cannot be undone</strong>.</p>
+        <form method="POST" action="{{ route('admin.users.deleteAll') }}">
+            @csrf
+            @method('DELETE')
+            <div class="modal-actions">
+                <button type="button" class="btn-cancel" onclick="document.getElementById('deleteAllModal').style.display='none'">Cancel</button>
                 <button type="submit" class="btn-confirm-clear">Yes, Delete All Users</button>
             </div>
         </form>
@@ -159,23 +175,13 @@
     </div>
 </div>
 
-<!-- Force Logout Confirmation Modal -->
-<div id="forceLogoutModal" class="modal-overlay" style="display:none;" onclick="if(event.target===this)this.style.display='none'">
-    <div class="modal-box">
-        <div class="modal-header">
-            <h3>⚠️ Force Logout All Users</h3>
-            <button class="modal-close" onclick="document.getElementById('forceLogoutModal').style.display='none'">✕</button>
-        </div>
-        <p style="color:#475569;font-size:0.9rem;margin:0 0 20px;">This will immediately invalidate all active user sessions. All users will be required to log in again. This action does not delete any accounts or data.</p>
-        <form method="POST" action="{{ route('admin.users.forceLogout') }}">
-            @csrf
-            <div class="modal-actions">
-                <button type="button" class="btn-cancel" onclick="document.getElementById('forceLogoutModal').style.display='none'">Cancel</button>
-                <button type="submit" class="btn-confirm-logout">Yes, Force Logout All</button>
-            </div>
-        </form>
-    </div>
-</div>
+<script>
+function openDeleteModal(userId, userName) {
+    document.getElementById('deleteUserName').textContent = userName;
+    document.getElementById('deleteUserForm').action = '/admin/users/' + userId;
+    document.getElementById('deleteUserModal').style.display = 'flex';
+}
+</script>
 
 <style>
     * { box-sizing: border-box; }
@@ -500,6 +506,21 @@
         transition: all 0.2s;
     }
     .btn-confirm-logout:hover { box-shadow: 0 4px 12px rgba(244,63,94,0.4); }
+
+    .btn-logout-user {
+        padding: 5px 12px;
+        background: linear-gradient(135deg, #f43f5e, #e11d48);
+        color: #fff;
+        border: none;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 0.78rem;
+        cursor: pointer;
+        white-space: nowrap;
+    }
+    .btn-logout-user:hover { box-shadow: 0 2px 8px rgba(244,63,94,0.4); }
+
+    .btn-confirm-logout { display: none; }
 
     @media (max-width: 768px) {
         .admin-main { margin-left: 0; padding: 16px; }
