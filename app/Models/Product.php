@@ -24,10 +24,17 @@ class Product extends Model
 
     public function getImageUrlAttribute(): ?string
     {
-        if (empty($this->image)) return null;
-        if (str_starts_with($this->image, 'http://') || str_starts_with($this->image, 'https://')) {
-            return $this->image;
-        }
-        return asset('storage/' . ltrim($this->image, '/'));
+        return !empty($this->image) ? $this->image : null;
+    }
+
+    /**
+     * Deduct stock safely, never going below zero.
+     * Returns false if stock is insufficient.
+     */
+    public function decrementStock(int $qty): bool
+    {
+        if ($this->stock < $qty) return false;
+        $this->decrement('stock', $qty);
+        return true;
     }
 }

@@ -36,6 +36,7 @@ Route::post('/admin/logout', [AuthController::class, 'adminLogout'])->name('admi
 // ── Authenticated User routes (web guard, non-admin only) ─────────────────────
 Route::middleware(['auth:web', 'verified', 'not.admin'])->group(function () {
     Route::get('/cart', [CartController::class, 'index'])->name('cart');
+    Route::post('/cart/checkout-selected', [CartController::class, 'checkoutSelected'])->name('cart.checkout-selected');
     Route::get('/checkout', fn() => view('checkout'))->name('checkout');
     Route::post('/checkout',  [OrderController::class, 'store'])->name('orders.store');
     Route::get('/order/confirmation/{order}', [OrderController::class, 'confirmation'])->name('orders.confirmation');
@@ -75,6 +76,7 @@ Route::middleware(['auth:admin', 'verified', 'admin'])
         Route::get('/products',              fn() => redirect()->route('admin.dashboard'))->name('products');
         Route::post('/products',             [AdminController::class, 'storeProduct'])->name('products.store');
         Route::put('/products/{product}',    [AdminController::class, 'updateProduct'])->name('products.update');
+        Route::patch('/products/{product}/stock', [AdminController::class, 'updateStock'])->name('products.stock');
         Route::delete('/products/{product}', [AdminController::class, 'destroyProduct'])->name('products.destroy');
 
         // Orders

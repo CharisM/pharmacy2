@@ -48,6 +48,11 @@ class CartController extends Controller
             $cartItem->update(['quantity' => $qty]);
         }
 
+        // Return JSON for AJAX calls, redirect for regular form posts
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json(['ok' => true]);
+        }
+
         return back()->with('success', 'Cart updated.');
     }
 
@@ -56,19 +61,50 @@ class CartController extends Controller
         $this->authorizeItem($cartItem);
         $cartItem->delete();
 
+        if (request()->expectsJson() || request()->ajax()) {
+            return response()->json(['ok' => true]);
+        }
+
         return back()->with('success', 'Item removed.');
     }
 
     public function clear()
     {
         CartItem::where('user_id', auth('web')->id())->delete();
-
         return back()->with('success', 'Cart cleared.');
     }
 
     public function buyNow(Product $product)
     {
         session(['buynow_product_id' => $product->id]);
+        session()->forget('checkout_selected_ids');
+        return redirect()->route('checkout');
+    }
+
+    /**
+     * Store selected cart item IDs in session, then redirect to checkout.
+     */
+    public function checkoutSelected(Request $request)
+    {
+        $raw = $request->input('selected_ids', '');
+        $ids = array_filter(array_map('intval', explode(',', $raw)));
+
+        if (empty($ids)) {
+            return back()->with('error', 'Please select at least one item to checkout.');
+        }
+
+        // Validate ownership — keep only IDs belonging to this user
+        $validIds = CartItem::where('user_id', auth('web')->id())
+            ->whereIn('id', $ids)
+            ->pluck('id')
+            ->toArray();
+
+        if (empty($validIds)) {
+            return back()->with('error', 'No valid items selected.');
+        }
+
+        session(['checkout_selected_ids' => $validIds]);
+        session()->forget('buynow_product_id');
 
         return redirect()->route('checkout');
     }

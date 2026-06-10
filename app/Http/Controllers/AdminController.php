@@ -62,36 +62,35 @@ class AdminController extends Controller
 
         $products = $query->paginate(15)->withQueryString();
 
-        return view('admin.products', [
-            'products'      => $products,
-            'categories'    => self::CATEGORIES,
-            'totalProducts' => Product::count(),
-            'inStock'       => Product::where('stock', '>=', 10)->count(),
-            'lowStock'      => Product::where('stock', '>', 0)->where('stock', '<', 10)->count(),
-            'outOfStock'    => Product::where('stock', 0)->count(),
-        ]);
+        return response()
+            ->view('admin.products', [
+                'products'      => $products,
+                'categories'    => self::CATEGORIES,
+                'totalProducts' => Product::count(),
+                'inStock'       => Product::where('stock', '>=', 10)->count(),
+                'lowStock'      => Product::where('stock', '>', 0)->where('stock', '<', 10)->count(),
+                'outOfStock'    => Product::where('stock', 0)->count(),
+            ])
+            ->withHeaders([
+                'Cache-Control' => 'no-store, no-cache, must-revalidate',
+                'Pragma'        => 'no-cache',
+            ]);
     }
 
     public function storeProduct(Request $request)
     {
         $data = $request->validate([
-            'name'         => 'required|string|max:255',
-            'category'     => 'required|string|max:100',
-            'price'        => 'required|numeric|min:0',
-            'old_price'    => 'nullable|numeric|min:0',
-            'description'  => 'nullable|string',
-            'stock'        => 'required|integer|min:0',
-            'is_featured'  => 'nullable|boolean',
-            'image'        => 'nullable|string|max:255',
-            'image_upload' => 'nullable|image|max:2048',
+            'name'        => 'required|string|max:255',
+            'category'    => 'required|string|max:100',
+            'price'       => 'required|numeric|min:0',
+            'old_price'   => 'nullable|numeric|min:0',
+            'description' => 'nullable|string',
+            'stock'       => 'required|integer|min:0',
+            'is_featured' => 'nullable|boolean',
+            'image'       => 'nullable|url|max:2048',
         ]);
 
-        if ($request->hasFile('image_upload')) {
-            $data['image'] = $request->file('image_upload')->store('product-images', 'public');
-        }
-
         $data['is_featured'] = $request->boolean('is_featured');
-        unset($data['image_upload']);
         Product::create($data);
 
         return back()->with('success', 'Product added successfully.');
@@ -100,26 +99,37 @@ class AdminController extends Controller
     public function updateProduct(Request $request, Product $product)
     {
         $data = $request->validate([
-            'name'         => 'required|string|max:255',
-            'category'     => 'required|string|max:100',
-            'price'        => 'required|numeric|min:0',
-            'old_price'    => 'nullable|numeric|min:0',
-            'description'  => 'nullable|string',
-            'stock'        => 'required|integer|min:0',
-            'is_featured'  => 'nullable|boolean',
-            'image'        => 'nullable|string|max:500',
-            'image_upload' => 'nullable|image|max:2048',
+            'name'        => 'required|string|max:255',
+            'category'    => 'required|string|max:100',
+            'price'       => 'required|numeric|min:0',
+            'old_price'   => 'nullable|numeric|min:0',
+            'description' => 'nullable|string',
+            'stock'       => 'required|integer|min:0',
+            'is_featured' => 'nullable|boolean',
+            'image'       => 'nullable|url|max:2048',
         ]);
 
-        if ($request->hasFile('image_upload')) {
-            $data['image'] = $request->file('image_upload')->store('product-images', 'public');
-        }
-
         $data['is_featured'] = $request->boolean('is_featured');
-        unset($data['image_upload']);
         $product->update($data);
 
         return back()->with('success', 'Product updated successfully.');
+    }
+
+    public function updateStock(Request $request, Product $product)
+    {
+        $request->validate([
+            'stock' => 'required|integer|min:0',
+        ]);
+
+        $product->update(['stock' => (int) $request->stock]);
+
+        return response()->json([
+            'stock'   => $product->fresh()->stock,
+            'message' => 'Stock updated successfully.',
+        ])->withHeaders([
+            'Cache-Control' => 'no-store, no-cache, must-revalidate',
+            'Pragma'        => 'no-cache',
+        ]);
     }
 
     public function destroyProduct(Product $product)
@@ -141,8 +151,7 @@ class AdminController extends Controller
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
-                $q->where('first_name', 'like', "%{$search}%")
-                  ->orWhere('last_name', 'like', "%{$search}%")
+                $q->where('customer_name', 'like', "%{$search}%")
                   ->orWhere('id', 'like', "%{$search}%");
             });
         }

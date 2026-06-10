@@ -121,9 +121,21 @@
                                     </td>
                                     <td style="font-weight:600;color:#0f172a;">₱{{ number_format($product->price, 2) }}</td>
                                     <td>
-                                        <span class="stock-val {{ $product->stock == 0 ? 'stock-zero' : ($product->stock < 10 ? 'stock-low' : 'stock-ok') }}">
-                                            {{ $product->stock }}
-                                        </span>
+                                        <div class="stock-edit-wrap" data-id="{{ $product->id }}">
+                                            <input
+                                                type="number"
+                                                class="stock-input"
+                                                value="{{ $product->stock }}"
+                                                min="0"
+                                                data-original="{{ $product->stock }}"
+                                            />
+                                            <button class="btn-stock-save" title="Save stock">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12"><polyline points="20 6 9 17 4 12"/></svg>
+                                            </button>
+                                            <span class="stock-badge {{ $product->stock == 0 ? 'stock-zero' : ($product->stock < 10 ? 'stock-low' : 'stock-ok') }}">
+                                                {{ $product->stock }}
+                                            </span>
+                                        </div>
                                     </td>
                                     <td>
                                         <span class="img-path">{{ $product->image ? basename($product->image) : '—' }}</span>
@@ -182,7 +194,7 @@
             <h3>Add New Product</h3>
             <button class="modal-close" onclick="document.getElementById('addModal').style.display='none'">✕</button>
         </div>
-        <form method="POST" action="{{ route('admin.products.store') }}" enctype="multipart/form-data">
+        <form method="POST" action="{{ route('admin.products.store') }}">
             @csrf
             <div class="form-group">
                 <label>Product Name</label>
@@ -213,12 +225,8 @@
                 <textarea name="description" rows="3" class="form-input" style="resize:vertical"></textarea>
             </div>
             <div class="form-group">
-                <label>Upload Image</label>
-                <input type="file" name="image_upload" accept="image/*" class="form-input" />
-            </div>
-            <div class="form-group">
-                <label>Or Image Path / URL</label>
-                <input type="text" name="image" class="form-input" placeholder="e.g. images/product.jpg" />
+                <label>Image URL <span style="font-weight:400;color:#94a3b8">(optional)</span></label>
+                <input type="url" name="image" class="form-input" placeholder="https://example.com/image.jpg" />
             </div>
             <div class="form-group" style="display:flex;align-items:center;gap:10px">
                 <input type="checkbox" name="is_featured" value="1" id="addFeatured" style="width:18px;height:18px;cursor:pointer" />
@@ -249,7 +257,7 @@
             </button>
         </div>
 
-        <form id="editForm" method="POST" enctype="multipart/form-data">
+        <form id="editForm" method="POST">
             @csrf
             @method('PUT')
 
@@ -320,33 +328,17 @@
                              style="max-height:100px;border-radius:10px;border:1px solid #e2e8f0;object-fit:cover;display:block;margin-bottom:10px;" />
                     </div>
                     <div class="edit-field">
-                        <label class="edit-label" for="editImage">Image URL or Path <span class="opt">(optional)</span></label>
+                        <label class="edit-label" for="editImage">Image URL <span class="opt">(optional)</span></label>
                         <div class="edit-input-wrap">
                             <svg class="edit-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-                            <input type="text" name="image" id="editImage" class="edit-input"
-                                   placeholder="https://… or images/product.jpg"
+                            <input type="url" name="image" id="editImage" class="edit-input"
+                                   placeholder="https://example.com/image.jpg"
                                    oninput="previewEditImage(this.value)" />
                         </div>
                     </div>
-                    <div class="edit-field">
-                        <label class="edit-label" for="editImageUpload">Or Upload Image File <span class="opt">(optional)</span></label>
-                        <input type="file" name="image_upload" id="editImageUpload" accept="image/*"
-                               class="edit-input" style="padding:6px 12px;" />
-                    </div>
                 </div>
 
-                <div class="edit-featured-row">
-                    <label class="edit-toggle-wrap" for="editFeatured">
-                        <input type="checkbox" name="is_featured" id="editFeatured" value="1" class="edit-toggle-input" />
-                        <span class="edit-toggle-track">
-                            <span class="edit-toggle-thumb"></span>
-                        </span>
-                        <span class="edit-toggle-label">
-                            <span>★ Show in Featured Products</span>
-                            <span class="edit-toggle-hint">Displays on the home page featured section</span>
-                        </span>
-                    </label>
-                </div>
+
 
             </div>
 
@@ -457,6 +449,31 @@
     .stock-ok   { background: #f0fdf4; color: #16a34a; }
     .stock-low  { background: #fffbeb; color: #b45309; }
     .stock-zero { background: #fff1f2; color: #e11d48; }
+
+    /* Inline stock editor */
+    .stock-edit-wrap { display: flex; align-items: center; gap: 5px; }
+    .stock-input {
+        width: 64px; padding: 4px 8px; border: 1.5px solid #e2e8f0;
+        border-radius: 8px; font-size: 0.82rem; font-weight: 700;
+        color: #0f172a; background: #f8fafc; text-align: center;
+        transition: border-color 0.15s, box-shadow 0.15s;
+        -moz-appearance: textfield;
+    }
+    .stock-input::-webkit-outer-spin-button,
+    .stock-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    .stock-input:focus { outline: none; border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.12); background: #fff; }
+    .stock-input.changed { border-color: #f59e0b; background: #fffbeb; }
+    .btn-stock-save {
+        width: 26px; height: 26px; border-radius: 7px; border: none;
+        background: #6366f1; color: #fff; cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
+        opacity: 0; pointer-events: none; transition: opacity 0.15s, transform 0.15s;
+        flex-shrink: 0;
+    }
+    .btn-stock-save.visible { opacity: 1; pointer-events: auto; }
+    .btn-stock-save:hover { background: #4f46e5; transform: scale(1.08); }
+    .btn-stock-save.saving { background: #10b981; }
+    .stock-badge { font-weight: 700; padding: 3px 10px; border-radius: 20px; font-size: 0.82rem; white-space: nowrap; }
 
     .img-path {
         font-size: 0.8rem; color: #94a3b8;
@@ -574,24 +591,7 @@
     .edit-input:focus { outline: none; border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.12); }
     .edit-textarea { padding-left: 12px; resize: vertical; min-height: 76px; }
 
-    .edit-featured-row {
-        padding: 14px 16px; background: #fefce8;
-        border: 1px solid #fef08a; border-radius: 12px;
-    }
-    .edit-toggle-wrap { display: flex; align-items: center; gap: 12px; cursor: pointer; }
-    .edit-toggle-input { display: none; }
-    .edit-toggle-track {
-        width: 42px; height: 24px; background: #cbd5e1;
-        border-radius: 999px; position: relative; flex-shrink: 0; transition: background 0.2s;
-    }
-    .edit-toggle-input:checked + .edit-toggle-track { background: #6366f1; }
-    .edit-toggle-thumb {
-        position: absolute; top: 3px; left: 3px; width: 18px; height: 18px;
-        background: #fff; border-radius: 50%; box-shadow: 0 1px 4px rgba(0,0,0,0.18); transition: left 0.2s;
-    }
-    .edit-toggle-input:checked + .edit-toggle-track .edit-toggle-thumb { left: 21px; }
-    .edit-toggle-label { display: flex; flex-direction: column; gap: 1px; font-size: 0.85rem; font-weight: 700; color: #854d0e; }
-    .edit-toggle-hint { font-size: 0.74rem; font-weight: 400; color: #a16207; }
+
 
     .edit-modal-footer {
         display: flex; gap: 10px; justify-content: flex-end;
@@ -655,6 +655,7 @@
 </style>
 
 <script>
+    // ── Category tabs ───────────────────────────────────────────────────────
     document.querySelectorAll('.cat-tab').forEach(btn => {
         btn.addEventListener('click', () => {
             document.querySelectorAll('.cat-tab').forEach(b => b.classList.remove('active'));
@@ -666,6 +667,79 @@
         });
     });
 
+    // ── Inline stock editor ─────────────────────────────────────────────────
+    function stockClass(n) {
+        return n == 0 ? 'stock-zero' : (n < 10 ? 'stock-low' : 'stock-ok');
+    }
+
+    document.querySelectorAll('.stock-edit-wrap').forEach(wrap => {
+        const input  = wrap.querySelector('.stock-input');
+        const saveBtn = wrap.querySelector('.btn-stock-save');
+        const badge  = wrap.querySelector('.stock-badge');
+        const productId = wrap.dataset.id;
+
+        input.addEventListener('input', () => {
+            const changed = input.value !== input.dataset.original;
+            input.classList.toggle('changed', changed);
+            saveBtn.classList.toggle('visible', changed);
+        });
+
+        saveBtn.addEventListener('click', async () => {
+            const val = parseInt(input.value, 10);
+            if (isNaN(val) || val < 0) {
+                input.focus();
+                return;
+            }
+
+            saveBtn.classList.add('saving');
+            saveBtn.disabled = true;
+
+            try {
+                const res = await fetch(`/admin/products/${productId}/stock`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    },
+                    body: JSON.stringify({ stock: val }),
+                });
+
+                if (!res.ok) throw new Error('Server error');
+
+                const data = await res.json();
+                const newStock = data.stock;
+
+                // Update badge
+                badge.textContent = newStock;
+                badge.className = 'stock-badge ' + stockClass(newStock);
+
+                // Sync input state
+                input.value = newStock;
+                input.dataset.original = newStock;
+                input.classList.remove('changed');
+                saveBtn.classList.remove('visible', 'saving');
+                saveBtn.disabled = false;
+
+                // Brief green flash on the row
+                const row = wrap.closest('tr');
+                row.style.transition = 'background 0.3s';
+                row.style.background = '#f0fdf4';
+                setTimeout(() => row.style.background = '', 900);
+
+            } catch (e) {
+                saveBtn.classList.remove('saving');
+                saveBtn.disabled = false;
+                alert('Failed to update stock. Please try again.');
+            }
+        });
+
+        // Also save on Enter key
+        input.addEventListener('keydown', e => {
+            if (e.key === 'Enter') { e.preventDefault(); saveBtn.click(); }
+        });
+    });
+
+    // ── Edit product modal ──────────────────────────────────────────────────
     document.addEventListener('keydown', e => {
         if (e.key === 'Escape') {
             closeEdit();
@@ -680,10 +754,7 @@
         document.getElementById('editOldPrice').value = oldPrice ?? '';
         document.getElementById('editStock').value = stock;
         document.getElementById('editImage').value = image;
-        document.getElementById('editFeatured').checked = isFeatured;
         document.getElementById('editDescription').value = description;
-        // Reset file input
-        document.getElementById('editImageUpload').value = '';
         previewEditImage(image);
         document.getElementById('editModal').style.display = 'flex';
     }
@@ -692,7 +763,7 @@
         const preview = document.getElementById('editImgPreview');
         const wrap    = document.getElementById('editImgPreviewWrap');
         if (src && src.trim()) {
-            preview.src = src.startsWith('http') ? src : `/storage/${src}`;
+            preview.src = src;
             wrap.style.display = 'block';
         } else {
             wrap.style.display = 'none';
@@ -703,16 +774,5 @@
     function closeEdit() {
         document.getElementById('editModal').style.display = 'none';
     }
-
-    document.getElementById('editImageUpload').addEventListener('change', function () {
-        if (this.files && this.files[0]) {
-            const reader = new FileReader();
-            reader.onload = e => {
-                document.getElementById('editImgPreview').src = e.target.result;
-                document.getElementById('editImgPreviewWrap').style.display = 'block';
-            };
-            reader.readAsDataURL(this.files[0]);
-        }
-    });
 </script>
 @endsection

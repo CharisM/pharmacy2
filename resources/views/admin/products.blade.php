@@ -189,7 +189,7 @@
             <h3>Add New Product</h3>
             <button class="modal-close-x" onclick="document.getElementById('addModal').style.display='none'">✕</button>
         </div>
-        <form method="POST" action="{{ route('admin.products.store') }}" enctype="multipart/form-data">
+        <form method="POST" action="{{ route('admin.products.store') }}">
             @csrf
             <div class="form-grid">
                 <div class="form-group full">
@@ -220,13 +220,12 @@
                     <label>Description <span class="opt">(optional)</span></label>
                     <textarea name="description" rows="3" class="form-input" style="resize:vertical"></textarea>
                 </div>
-                <div class="form-group full">
-                    <label>Upload Image <span class="opt">(optional)</span></label>
-                    <input type="file" name="image_upload" accept="image/*" class="form-input" />
+                <div class="form-group full" id="addImgPreviewWrap" style="display:none;">
+                    <img id="addImgPreview" src="" alt="preview" style="max-height:90px;border-radius:8px;border:1px solid #e2e8f0;object-fit:cover;" />
                 </div>
                 <div class="form-group full">
-                    <label>Or Image Path / URL <span class="opt">(optional)</span></label>
-                    <input type="text" name="image" class="form-input" placeholder="e.g. images/product.jpg or https://…" />
+                    <label>Image URL <span class="opt">(optional)</span></label>
+                    <input type="url" name="image" id="addImage" class="form-input" placeholder="https://example.com/image.jpg" oninput="previewImage('add', this.value)" />
                 </div>
                 <div class="form-group full toggle-row">
                     <input type="checkbox" name="is_featured" value="1" id="addFeatured" />
@@ -248,7 +247,7 @@
             <h3>Edit Product</h3>
             <button class="modal-close-x" onclick="closeEdit()">✕</button>
         </div>
-        <form id="editForm" method="POST" enctype="multipart/form-data">
+        <form id="editForm" method="POST">
             @csrf @method('PUT')
             <div class="form-grid">
                 <div class="form-group full">
@@ -283,12 +282,8 @@
                     <img id="editImgPreview" src="" alt="preview" style="max-height:90px;border-radius:8px;border:1px solid #e2e8f0;object-fit:cover;" />
                 </div>
                 <div class="form-group full">
-                    <label>Image URL or Path <span class="opt">(optional)</span></label>
-                    <input type="text" name="image" id="editImage" class="form-input" placeholder="https://… or images/product.jpg" oninput="previewEditImage(this.value)" />
-                </div>
-                <div class="form-group full">
-                    <label>Or Upload Image <span class="opt">(optional)</span></label>
-                    <input type="file" name="image_upload" id="editImageUpload" accept="image/*" class="form-input" />
+                    <label>Image URL <span class="opt">(optional)</span></label>
+                    <input type="url" name="image" id="editImage" class="form-input" placeholder="https://example.com/image.jpg" oninput="previewImage('edit', this.value)" />
                 </div>
                 <div class="form-group full toggle-row">
                     <input type="checkbox" name="is_featured" id="editFeatured" value="1" />
@@ -470,34 +465,22 @@
         document.getElementById('editImage').value = image;
         document.getElementById('editFeatured').checked = isFeatured;
         document.getElementById('editDescription').value = description;
-        document.getElementById('editImageUpload').value = '';
-        previewEditImage(image);
+        previewImage('edit', image);
         document.getElementById('editModal').style.display = 'flex';
     }
 
     function closeEdit() { document.getElementById('editModal').style.display = 'none'; }
 
-    function previewEditImage(src) {
-        const wrap = document.getElementById('editImgPreviewWrap');
-        const img  = document.getElementById('editImgPreview');
-        if (src && src.trim()) {
-            img.src = src.startsWith('http') ? src : `/storage/${src}`;
+    function previewImage(prefix, url) {
+        const wrap = document.getElementById(prefix + 'ImgPreviewWrap');
+        const img  = document.getElementById(prefix + 'ImgPreview');
+        if (url && url.trim()) {
+            img.src = url;
             wrap.style.display = 'block';
         } else {
             wrap.style.display = 'none';
         }
     }
-
-    document.getElementById('editImageUpload').addEventListener('change', function () {
-        if (this.files && this.files[0]) {
-            const reader = new FileReader();
-            reader.onload = e => {
-                document.getElementById('editImgPreview').src = e.target.result;
-                document.getElementById('editImgPreviewWrap').style.display = 'block';
-            };
-            reader.readAsDataURL(this.files[0]);
-        }
-    });
 
     document.addEventListener('keydown', e => {
         if (e.key === 'Escape') {

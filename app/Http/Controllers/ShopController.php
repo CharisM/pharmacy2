@@ -31,6 +31,11 @@ class ShopController extends Controller
             $products = Product::all();
         }
 
-        return view('categories', compact('categories', 'selectedCategory', 'products'));
+        return response()
+            ->view('categories', compact('categories', 'selectedCategory', 'products'))
+            ->withHeaders([
+                'Cache-Control' => 'no-store, no-cache, must-revalidate',
+                'Pragma'        => 'no-cache',
+            ]);
     }
 }

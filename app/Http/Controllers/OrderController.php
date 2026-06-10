@@ -7,6 +7,7 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class OrderController extends Controller
 {
@@ -21,52 +22,97 @@ class OrderController extends Controller
         ]);
 
         $buyNowProductId = session('buynow_product_id');
-        $buyNowProduct   = $buyNowProductId ? Product::find($buyNowProductId) : null;
+        $isBuyNow        = (bool) $buyNowProductId;
 
-        if ($buyNowProduct) {
-            $orderItems = collect([(object)['product' => $buyNowProduct, 'quantity' => 1]]);
+        if ($isBuyNow) {
+            $product = Product::find($buyNowProductId);
+            if (!$product) {
+                return back()->with('error', 'Product not found.');
+            }
+            $itemRefs = collect([['product_id' => $product->id, 'quantity' => 1]]);
         } else {
-            $orderItems = CartItem::with('product')
+            $selectedIds = session('checkout_selected_ids', []);
+            if (empty($selectedIds)) {
+                return redirect()->route('cart')->with('error', 'No items selected. Please select items from your cart.');
+            }
+
+            $cartItems = CartItem::with('product')
                 ->where('user_id', auth('web')->id())
+                ->whereIn('id', $selectedIds)
                 ->get()
                 ->filter(fn($i) => $i->product);
-        }
 
-        if ($orderItems->isEmpty()) {
-            return back()->with('error', 'Your cart is empty.');
-        }
+            if ($cartItems->isEmpty()) {
+                return redirect()->route('cart')->with('error', 'Selected items are no longer available.');
+            }
 
-        $total = $orderItems->reduce(fn($s, $i) => $s + $i->product->price * $i->quantity, 0);
-
-        $order = Order::create([
-            'user_id'        => auth('web')->id(),
-            'first_name'     => $request->first_name,
-            'last_name'      => $request->last_name,
-            'address'        => $request->address,
-            'phone'          => $request->phone,
-            'payment_method' => $request->payment_method,
-            'notes'          => $request->notes,
-            'total'          => $total,
-            'status'         => 'Pending',
-        ]);
-
-        foreach ($orderItems as $item) {
-            OrderItem::create([
-                'order_id'   => $order->id,
-                'product_id' => $item->product->id,
-                'quantity'   => $item->quantity,
-                'price'      => $item->product->price,
+            $itemRefs = $cartItems->map(fn($i) => [
+                'product_id' => $i->product_id,
+                'quantity'   => $i->quantity,
             ]);
         }
 
-        // Clear cart / buy-now session
-        if ($buyNowProduct) {
-            session()->forget('buynow_product_id');
-        } else {
-            CartItem::where('user_id', auth('web')->id())->delete();
+        try {
+            $order = DB::transaction(function () use ($request, $itemRefs, $isBuyNow) {
+                $productIds = $itemRefs->pluck('product_id');
+                $products   = Product::whereIn('id', $productIds)->lockForUpdate()->get()->keyBy('id');
+
+                foreach ($itemRefs as $ref) {
+                    $product = $products->get($ref['product_id']);
+                    if (!$product || $product->stock < $ref['quantity']) {
+                        $name  = $product->name ?? 'A product';
+                        $avail = $product->stock ?? 0;
+                        throw new \RuntimeException("'{$name}' only has {$avail} unit(s) left in stock.");
+                    }
+                }
+
+                $total = $itemRefs->reduce(
+                    fn($s, $ref) => $s + $products->get($ref['product_id'])->price * $ref['quantity'],
+                    0
+                );
+
+                $order = Order::create([
+                    'user_id'        => auth('web')->id(),
+                    'first_name'     => $request->first_name,
+                    'last_name'      => $request->last_name,
+                    'address'        => $request->address,
+                    'phone'          => $request->phone,
+                    'payment_method' => $request->payment_method,
+                    'notes'          => $request->notes,
+                    'total'          => $total,
+                    'status'         => 'Pending',
+                ]);
+
+                foreach ($itemRefs as $ref) {
+                    $product = $products->get($ref['product_id']);
+                    OrderItem::create([
+                        'order_id'   => $order->id,
+                        'product_id' => $product->id,
+                        'quantity'   => $ref['quantity'],
+                        'price'      => $product->price,
+                    ]);
+                    $product->decrement('stock', $ref['quantity']);
+                }
+
+                return $order;
+            });
+        } catch (\RuntimeException $e) {
+            return back()->with('error', $e->getMessage());
         }
 
-        return redirect()->route('orders.confirmation', $order)->with('success', 'Order placed successfully!');
+        // Clear only the ordered items from cart
+        if ($isBuyNow) {
+            session()->forget('buynow_product_id');
+        } else {
+            $selectedIds = session('checkout_selected_ids', []);
+            CartItem::where('user_id', auth('web')->id())
+                ->whereIn('id', $selectedIds)
+                ->delete();
+            session()->forget('checkout_selected_ids');
+        }
+
+        return redirect()->route('orders.confirmation', $order)
+            ->with('success', 'Order placed successfully!');
     }
 
     public function confirmation(Order $order)

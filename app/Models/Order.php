@@ -21,5 +21,10 @@ class Order extends Model
         return $this->hasMany(OrderItem::class);
     }
 
+    public function getFullNameAttribute(): string
+    {
+        return trim("{$this->first_name} {$this->last_name}");
+    }
+
     public static $statuses = ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled'];
 }

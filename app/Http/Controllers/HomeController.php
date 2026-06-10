@@ -19,6 +19,11 @@ class HomeController extends Controller
 
         $featured_products = \App\Models\Product::where('is_featured', true)->get();
 
-        return view('home', compact('categories', 'featured_products'));
+        return response()
+            ->view('home', compact('categories', 'featured_products'))
+            ->withHeaders([
+                'Cache-Control' => 'no-store, no-cache, must-revalidate',
+                'Pragma'        => 'no-cache',
+            ]);
     }
 }
