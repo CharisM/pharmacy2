@@ -44,6 +44,7 @@ Route::middleware(['auth:web', 'verified', 'not.admin'])->group(function () {
     Route::get('/profile',      [ProfileController::class, 'show'])->name('profile');
     Route::get('/profile/edit', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('/profile',      [ProfileController::class, 'update'])->name('profile.update');
+    Route::get('/my-orders',    [OrderController::class, 'myOrders'])->name('orders.my');
 
     Route::post('/contact', [MessageController::class, 'store'])->name('contact.send');
 

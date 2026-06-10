@@ -876,6 +876,7 @@
                     </button>
                     <div class="account-dropdown-menu" data-account-menu aria-hidden="true">
                         <a href="{{ route('profile') }}">Profile</a>
+                        <a href="{{ route('orders.my') }}">My Orders</a>
                         <a href="{{ route('messages.index') }}" style="display:flex;align-items:center;justify-content:space-between;">
                             My Messages
                             @if($unreadReplyCount > 0)

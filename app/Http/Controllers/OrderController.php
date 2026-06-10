@@ -119,4 +119,14 @@ class OrderController extends Controller
         $order->load('items.product');
         return view('order-confirmation', compact('order'));
     }
+
+    public function myOrders()
+    {
+        $orders = Order::with('items.product')
+            ->where('user_id', auth('web')->id())
+            ->latest()
+            ->get();
+
+        return view('my-orders', compact('orders'));
+    }
 }
