@@ -796,6 +796,15 @@
         .pc-btn-cart:hover { background:rgba(16,163,127,0.08); border-color:rgba(16,163,127,0.5); }
         .pc-btn-buynow { background:#16a34a; color:#ffffff; }
         .pc-btn-buynow:hover { background:#047857; }
+        /* Stock badge */
+        .pc-stock-row { margin-top:2px; }
+        .pc-stock-badge { display:inline-block; font-size:11px; font-weight:700; padding:3px 10px; border-radius:999px; }
+        .pc-stock-ok  { background:#f0fdf4; color:#16a34a; border:1px solid #bbf7d0; }
+        .pc-stock-low { background:#fffbeb; color:#b45309; border:1px solid #fde68a; }
+        .pc-stock-oos { background:#fff1f2; color:#e11d48; border:1px solid #fecdd3; }
+        /* Out-of-stock overlay on image */
+        .pc-image { position:relative; }
+        .pc-oos-overlay { position:absolute; inset:0; background:rgba(0,0,0,0.45); display:flex; align-items:center; justify-content:center; color:#fff; font-size:13px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; border-radius:0; }
     </style>
     @stack('styles')
 </head>
