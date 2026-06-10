@@ -801,8 +801,11 @@
 </head>
 <body>
 @php
-    $cartItemCount = auth()->check()
-        ? \App\Models\CartItem::where('user_id', auth()->id())->sum('quantity')
+    $cartItemCount = auth('web')->check()
+        ? \App\Models\CartItem::where('user_id', auth('web')->id())->sum('quantity')
+        : 0;
+    $unreadReplyCount = auth('web')->check() && !auth('web')->user()->is_admin
+        ? \App\Models\Message::where('user_id', auth('web')->id())->where('has_unread_reply', true)->count()
         : 0;
 @endphp
 
@@ -844,23 +847,32 @@
                 @endif
             </a>
 
-            @auth
-                @if (auth()->user()->is_admin)
+            @auth('web')
+                @if (auth('web')->user()->is_admin)
                     <a href="{{ route('admin.dashboard') }}" class="btn-outline" style="padding:6px 14px;font-size:13px;text-decoration:none;margin-right:8px;">
                         Admin
                     </a>
                 @endif
             @endauth
 
-            @auth
+            @auth('web')
                 <div class="account-dropdown">
                     <button type="button" class="account-dropdown-button" data-account-toggle aria-expanded="false" title="Account">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
                         </svg>
+                        @if($unreadReplyCount > 0)
+                            <span class="badge" style="background:#ef4444;">{{ $unreadReplyCount }}</span>
+                        @endif
                     </button>
                     <div class="account-dropdown-menu" data-account-menu aria-hidden="true">
                         <a href="{{ route('profile') }}">Profile</a>
+                        <a href="{{ route('messages.index') }}" style="display:flex;align-items:center;justify-content:space-between;">
+                            My Messages
+                            @if($unreadReplyCount > 0)
+                                <span style="background:#ef4444;color:#fff;font-size:11px;font-weight:800;padding:2px 7px;border-radius:999px;">{{ $unreadReplyCount }}</span>
+                            @endif
+                        </a>
                         <form action="{{ route('logout') }}" method="POST">
                             @csrf
                             <button type="submit">Logout</button>
@@ -869,7 +881,7 @@
                 </div>
             @endauth
 
-            @guest
+            @guest('web')
                 <a href="{{ route('login') }}" class="btn-outline" style="padding:6px 14px;font-size:13px;text-decoration:none;">
                     Login
                 </a>

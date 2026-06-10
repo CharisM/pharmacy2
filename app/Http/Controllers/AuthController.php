@@ -10,16 +10,15 @@ use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
+    // ── Show pages ────────────────────────────────────────────────────────────
+
     public function showLogin()
     {
-        if (Auth::check()) {
-            if (! auth()->user()->hasVerifiedEmail()) {
+        if (Auth::guard('web')->check()) {
+            if (! Auth::guard('web')->user()->hasVerifiedEmail()) {
                 return redirect()->route('verification.notice');
             }
-
-            return auth()->user()->isAdmin()
-                ? redirect()->route('admin.dashboard')
-                : redirect()->route('home');
+            return redirect()->route('home');
         }
 
         return view('auth.login');
@@ -27,48 +26,58 @@ class AuthController extends Controller
 
     public function showAdminLogin()
     {
-        if (Auth::check()) {
-            if (! auth()->user()->hasVerifiedEmail()) {
+        if (Auth::guard('admin')->check()) {
+            if (! Auth::guard('admin')->user()->hasVerifiedEmail()) {
                 return redirect()->route('verification.notice');
             }
-
-            if (auth()->user()->isAdmin()) {
-                return redirect()->route('admin.dashboard');
-            }
+            return redirect()->route('admin.dashboard');
         }
 
         return view('auth.admin-login');
     }
 
+    public function showRegister()
+    {
+        if (Auth::guard('web')->check()) {
+            if (! Auth::guard('web')->user()->hasVerifiedEmail()) {
+                return redirect()->route('verification.notice');
+            }
+            return redirect()->route('home');
+        }
+
+        return view('auth.register');
+    }
+
+    // ── Login ─────────────────────────────────────────────────────────────────
+
     public function login(Request $request)
     {
         $request->validate([
-            'email' => 'required|email',
+            'email'    => 'required|email',
             'password' => 'required|min:6',
         ]);
 
         $credentials = $request->only('email', 'password');
 
-        if (Auth::attempt($credentials, $request->boolean('remember'))) {
-            if (auth()->user()->isAdmin()) {
-                Auth::logout();
+        if (Auth::guard('web')->attempt($credentials, $request->boolean('remember'))) {
+            $user = Auth::guard('web')->user();
 
+            // Block admin accounts from the user panel
+            if ($user->is_admin) {
+                Auth::guard('web')->logout();
                 return back()->withErrors([
-                    'email' => 'Please use the admin login page.',
+                    'email' => 'Admin accounts must use the admin login page.',
                 ])->withInput($request->except('password'));
             }
 
-            if (! auth()->user()->hasVerifiedEmail()) {
-                $user = auth()->user();
+            if (! $user->hasVerifiedEmail()) {
                 $this->startEmailVerification($request, $user);
-                Auth::logout();
-
+                Auth::guard('web')->logout();
                 return redirect()->route('verification.notice')
                     ->with('status', 'verification-code-sent');
             }
 
             $request->session()->regenerate();
-
             return redirect()->intended(route('home'));
         }
 
@@ -80,32 +89,31 @@ class AuthController extends Controller
     public function adminLogin(Request $request)
     {
         $request->validate([
-            'email' => 'required|email',
+            'email'    => 'required|email',
             'password' => 'required|min:6',
         ]);
 
         $credentials = $request->only('email', 'password');
 
-        if (Auth::attempt($credentials, $request->boolean('remember'))) {
-            $request->session()->regenerate();
+        if (Auth::guard('admin')->attempt($credentials, $request->boolean('remember'))) {
+            $user = Auth::guard('admin')->user();
 
-            if (! auth()->user()->isAdmin()) {
-                Auth::logout();
-
+            // Block non-admin accounts from the admin panel
+            if (! $user->is_admin) {
+                Auth::guard('admin')->logout();
                 return back()->withErrors([
                     'email' => 'You do not have admin access.',
                 ])->withInput($request->except('password'));
             }
 
-            if (! auth()->user()->hasVerifiedEmail()) {
-                $user = auth()->user();
+            if (! $user->hasVerifiedEmail()) {
                 $this->startEmailVerification($request, $user);
-                Auth::logout();
-
+                Auth::guard('admin')->logout();
                 return redirect()->route('verification.notice')
                     ->with('status', 'verification-code-sent');
             }
 
+            $request->session()->regenerate();
             return redirect()->intended(route('admin.dashboard'));
         }
 
@@ -114,20 +122,7 @@ class AuthController extends Controller
         ])->withInput($request->except('password'));
     }
 
-    public function showRegister()
-    {
-        if (Auth::check()) {
-            if (! auth()->user()->hasVerifiedEmail()) {
-                return redirect()->route('verification.notice');
-            }
-
-            return auth()->user()->isAdmin()
-                ? redirect()->route('admin.dashboard')
-                : redirect()->route('home');
-        }
-
-        return view('auth.register');
-    }
+    // ── Register ──────────────────────────────────────────────────────────────
 
     public function register(Request $request)
     {
@@ -147,7 +142,6 @@ class AuthController extends Controller
             'expires_at' => now()->addMinutes(10)->toDateTimeString(),
         ]);
 
-        // Send code via a temporary unsaved user object
         $temp = new User(['name' => $request->name, 'email' => $request->email]);
         $temp->notify(new EmailVerificationCode($code));
 
@@ -155,9 +149,10 @@ class AuthController extends Controller
             ->with('status', 'verification-code-sent');
     }
 
+    // ── Email verification ────────────────────────────────────────────────────
+
     public function showVerifyEmail(Request $request)
     {
-        // Pending registration (not yet in DB)
         $pending = $request->session()->get('pending_registration');
         if ($pending) {
             return view('auth.verify-email', ['email' => $pending['email']]);
@@ -170,23 +165,17 @@ class AuthController extends Controller
         }
 
         if ($user->hasVerifiedEmail()) {
-            return Auth::check()
-                ? redirect()->route('home')
-                : redirect()->route('login');
+            return redirect()->route('home');
         }
 
-        return view('auth.verify-email', [
-            'email' => $user->email,
-        ]);
+        return view('auth.verify-email', ['email' => $user->email]);
     }
 
     public function verifyEmailCode(Request $request)
     {
-        $request->validate([
-            'code' => 'required|digits:6',
-        ]);
+        $request->validate(['code' => 'required|digits:6']);
 
-        // Handle pending registration (user not yet in DB)
+        // Pending registration (not yet in DB)
         $pending = $request->session()->get('pending_registration');
         if ($pending) {
             if (
@@ -204,14 +193,12 @@ class AuthController extends Controller
             ]);
 
             $request->session()->forget('pending_registration');
-            Auth::login($user);
-            $request->session()->regenerate();
 
-            return redirect()->route('home')
-                ->with('success', 'Your email address has been verified.');
+            return redirect()->route('login')
+                ->with('status', 'email-verified');
         }
 
-        // Handle existing user (e.g. admin or re-verification)
+        // Existing unverified user
         $user = $this->verificationUser($request);
 
         if (! $user) {
@@ -241,18 +228,17 @@ class AuthController extends Controller
 
         $request->session()->forget('pending_verification_user_id');
 
-        if (Auth::check()) {
-            return redirect()->intended(route('home'))
-                ->with('success', 'Your email address has been verified.');
+        if (Auth::guard('web')->check()) {
+            Auth::guard('web')->logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
         }
 
-        return redirect()->route('login')
-            ->with('status', 'email-verified');
+        return redirect()->route('login')->with('status', 'email-verified');
     }
 
     public function resendEmailCode(Request $request)
     {
-        // Handle pending registration
         $pending = $request->session()->get('pending_registration');
         if ($pending) {
             $code = (string) random_int(100000, 999999);
@@ -273,9 +259,7 @@ class AuthController extends Controller
         }
 
         if ($user->hasVerifiedEmail()) {
-            return Auth::check()
-                ? redirect()->route('home')
-                : redirect()->route('login');
+            return redirect()->route('home');
         }
 
         $this->startEmailVerification($request, $user);
@@ -283,37 +267,34 @@ class AuthController extends Controller
         return back()->with('status', 'verification-code-sent');
     }
 
+    // ── Logout ────────────────────────────────────────────────────────────────
+
     public function logout(Request $request)
     {
-        Auth::logout();
+        Auth::guard('web')->logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
         return redirect()->route('login');
     }
 
-    private function redirectAfterLogin(Request $request, string $routeName)
+    public function adminLogout(Request $request)
     {
-        $request->session()->regenerate();
+        Auth::guard('admin')->logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
 
-        if (! auth()->user()->hasVerifiedEmail()) {
-            $user = auth()->user();
-            $this->startEmailVerification($request, $user);
-            Auth::logout();
-
-            return redirect()->route('verification.notice')
-                ->with('status', 'verification-code-sent');
-        }
-
-        return redirect()->intended(route($routeName));
+        return redirect()->route('admin.login');
     }
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
 
     private function startEmailVerification(Request $request, User $user): void
     {
         $code = (string) random_int(100000, 999999);
 
         $user->forceFill([
-            'email_verification_code' => Hash::make($code),
+            'email_verification_code'            => Hash::make($code),
             'email_verification_code_expires_at' => now()->addMinutes(10),
         ])->save();
 
@@ -323,16 +304,12 @@ class AuthController extends Controller
 
     private function verificationUser(Request $request): ?User
     {
-        if (Auth::check()) {
-            return $request->user();
+        if (Auth::guard('web')->check()) {
+            return Auth::guard('web')->user();
         }
 
         $userId = $request->session()->get('pending_verification_user_id');
 
-        if (! $userId) {
-            return null;
-        }
-
-        return User::find($userId);
+        return $userId ? User::find($userId) : null;
     }
 }

@@ -14,6 +14,12 @@ class Product extends Model
         'rating',
         'image',
         'stock',
+        'is_featured',
+        'description',
+    ];
+
+    protected $casts = [
+        'is_featured' => 'boolean',
     ];
 
     public function getImageUrlAttribute(): ?string

@@ -556,7 +556,7 @@
         </div>
         <div class="categories-grid">
             @foreach ($categories as $cat)
-            <a href="{{ route('shop', ['category' => $cat['name']]) }}" class="category-card">
+            <a href="{{ route('categories', ['category' => \Illuminate\Support\Str::slug($cat['name'])]) }}" class="category-card">
                 <div class="category-icon">
                     @include('partials.category-icon', ['icon' => $cat['icon']])
                 </div>

@@ -11,7 +11,7 @@ class CartController extends Controller
     public function index()
     {
         $cartItems = CartItem::with('product')
-            ->where('user_id', auth()->id())
+            ->where('user_id', auth('web')->id())
             ->get();
 
         return view('cart', compact('cartItems'));
@@ -19,7 +19,7 @@ class CartController extends Controller
 
     public function add(Product $product)
     {
-        $cartItem = CartItem::where('user_id', auth()->id())
+        $cartItem = CartItem::where('user_id', auth('web')->id())
             ->where('product_id', $product->id)
             ->first();
 
@@ -27,7 +27,7 @@ class CartController extends Controller
             $cartItem->increment('quantity');
         } else {
             CartItem::create([
-                'user_id'    => auth()->id(),
+                'user_id'    => auth('web')->id(),
                 'product_id' => $product->id,
                 'quantity'   => 1,
             ]);
@@ -61,7 +61,7 @@ class CartController extends Controller
 
     public function clear()
     {
-        CartItem::where('user_id', auth()->id())->delete();
+        CartItem::where('user_id', auth('web')->id())->delete();
 
         return back()->with('success', 'Cart cleared.');
     }
@@ -75,6 +75,6 @@ class CartController extends Controller
 
     private function authorizeItem(CartItem $cartItem): void
     {
-        abort_unless($cartItem->user_id === auth()->id(), 403);
+        abort_unless($cartItem->user_id === auth('web')->id(), 403);
     }
 }

@@ -44,15 +44,27 @@
 
         <div class="contact-card">
             <h2>Send us a message</h2>
-            <form action="#" method="GET">
+
+            @if(session('success'))
+                <div style="margin-bottom:16px;padding:12px 16px;background:#dcfce7;border:1px solid #86efac;border-radius:12px;color:#166534;font-weight:700;font-size:0.9rem;">✅ {{ session('success') }}</div>
+            @endif
+
+            @auth
+            <form action="{{ route('contact.send') }}" method="POST">
+                @csrf
                 <label>Name</label>
-                <input type="text" placeholder="Your name" />
+                <input type="text" name="name" value="{{ auth()->user()->name }}" placeholder="Your name" required />
                 <label>Email</label>
-                <input type="email" placeholder="you@example.com" />
+                <input type="email" name="email" value="{{ auth()->user()->email }}" placeholder="you@example.com" required />
+                <label>Subject <span style="font-weight:400;color:#94a3b8;font-size:0.85em;">(optional)</span></label>
+                <input type="text" name="subject" placeholder="e.g. Order inquiry" />
                 <label>Message</label>
-                <textarea placeholder="Your message"></textarea>
+                <textarea name="body" placeholder="Your message" required></textarea>
                 <button type="submit" class="btn-primary">Send Message</button>
             </form>
+            @else
+            <p style="color:#475569;margin:0 0 16px;">Please <a href="{{ route('login') }}" style="color:#16a34a;font-weight:700;">log in</a> to send us a message.</p>
+            @endauth
         </div>
     </div>
 </section>

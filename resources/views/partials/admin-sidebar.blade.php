@@ -1,5 +1,6 @@
 @php
     $currentRoute = request()->route()->getName();
+    $unreadMsgCount = \App\Models\Message::where('admin_read', false)->count();
 @endphp
 
 <aside class="admin-sidebar">
@@ -14,9 +15,9 @@
     </div>
 
     <div class="profile-card">
-        <img src="{{ auth()->user()->profile_picture_url }}" alt="{{ auth()->user()->name }}" class="profile-avatar" />
+        <img src="{{ auth('admin')->user()->profile_picture_url }}" alt="{{ auth('admin')->user()->name }}" class="profile-avatar" />
         <div class="profile-details">
-            <h3>{{ auth()->user()->name }}</h3>
+            <h3>{{ auth('admin')->user()->name }}</h3>
             <p>Administrator</p>
         </div>
     </div>
@@ -38,15 +39,17 @@
             <span>Dashboard</span>
         </a>
 
-        <a href="#" class="nav-link {{ $currentRoute === 'admin.products' ? 'active' : '' }}">
+        <a href="{{ route('admin.messages') }}" class="nav-link {{ in_array($currentRoute, ['admin.messages', 'admin.messages.thread']) ? 'active' : '' }}" style="position:relative;">
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M21 16V8a2 2 0 0 0-1-1.73L13 2.27a2 2 0 0 0-2 0L4 6.27A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
-                <polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/>
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
             </svg>
-            <span>Products</span>
+            <span>Messages</span>
+            @if($unreadMsgCount > 0)
+                <span style="margin-left:auto;background:#ef4444;color:#fff;font-size:0.7rem;font-weight:800;padding:2px 7px;border-radius:999px;min-width:20px;text-align:center;">{{ $unreadMsgCount }}</span>
+            @endif
         </a>
 
-        <a href="#" class="nav-link {{ $currentRoute === 'admin.orders' ? 'active' : '' }}">
+        <a href="{{ route('admin.orders') }}" class="nav-link {{ $currentRoute === 'admin.orders' ? 'active' : '' }}">
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M9 17H5a2 2 0 0 0-2 2v0a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v0a2 2 0 0 0-2-2h-4"/>
                 <path d="M12 3v14"/><path d="M8 7l4-4 4 4"/>
@@ -64,17 +67,11 @@
             <span>Users</span>
         </a>
 
-        <a href="#" class="nav-link {{ $currentRoute === 'admin.settings' ? 'active' : '' }}">
-            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="3"/>
-                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-            </svg>
-            <span>Settings</span>
-        </a>
+
     </nav>
 
     <div class="sidebar-footer">
-        <a href="{{ route('logout') }}"
+        <a href="{{ route('admin.logout') }}"
            onclick="event.preventDefault(); document.getElementById('admin-logout-form').submit();"
            class="logout-btn">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
@@ -86,7 +83,7 @@
     </div>
 </aside>
 
-<form id="admin-logout-form" action="{{ route('logout') }}" method="POST" style="display:none;">@csrf</form>
+<form id="admin-logout-form" action="{{ route('admin.logout') }}" method="POST" style="display:none;">@csrf</form>
 
 <style>
     .admin-sidebar {

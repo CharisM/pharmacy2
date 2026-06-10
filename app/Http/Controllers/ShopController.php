@@ -10,12 +10,12 @@ class ShopController extends Controller
     public function categories(Request $request, $category = null)
     {
         $categories = [
-            ['name' => 'Medicines',     'slug' => 'medicines'],
-            ['name' => 'Personal Care', 'slug' => 'personal-care'],
-            ['name' => 'Baby Care',     'slug' => 'baby-care'],
-            ['name' => 'Wellness',      'slug' => 'wellness'],
-            ['name' => 'Vitamins',      'slug' => 'vitamins'],
-            ['name' => 'First Aid',     'slug' => 'first-aid'],
+            ['name' => 'Medicines',         'slug' => 'medicines'],
+            ['name' => 'Vitamins',           'slug' => 'vitamins'],
+            ['name' => 'Personal Care',      'slug' => 'personal-care'],
+            ['name' => 'Medical Supplies',   'slug' => 'medical-supplies'],
+            ['name' => 'Wellness Products',  'slug' => 'wellness-products'],
+            ['name' => 'Others',             'slug' => 'others'],
         ];
 
         $selectedCategory = null;

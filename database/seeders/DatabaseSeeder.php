@@ -26,7 +26,7 @@ class DatabaseSeeder extends Seeder
             'email' => 'test@example.com',
         ]);
 
-        // Seed sample products (10 per category)
+        // Seed sample products (9 per category)
         $this->call(\Database\Seeders\ProductSeeder::class);
     }
 }

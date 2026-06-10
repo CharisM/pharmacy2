@@ -24,6 +24,15 @@
                     </svg>
                     Reset Active Users
                 </button>
+                <button class="btn-clear-all" onclick="document.getElementById('clearAllModal').style.display='flex'">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15">
+                        <polyline points="3 6 5 6 21 6"/>
+                        <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                        <path d="M10 11v6M14 11v6"/>
+                        <path d="M9 6V4h6v2"/>
+                    </svg>
+                    Clear All Users
+                </button>
             </div>
         </div>
 
@@ -112,6 +121,24 @@
             </div>
         </div>
     </main>
+</div>
+
+<!-- Clear All Users Confirmation Modal -->
+<div id="clearAllModal" class="modal-overlay" style="display:none;" onclick="if(event.target===this)this.style.display='none'">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3>🗑️ Clear All Users</h3>
+            <button class="modal-close" onclick="document.getElementById('clearAllModal').style.display='none'">✕</button>
+        </div>
+        <p style="color:#475569;font-size:0.9rem;margin:0 0 20px;">This will <strong>permanently delete all non-admin user accounts</strong>, clear their cart items, and end all their sessions. Order history will be preserved. This action <strong>cannot be undone</strong>.</p>
+        <form method="POST" action="{{ route('admin.users.clearAll') }}">
+            @csrf
+            <div class="modal-actions">
+                <button type="button" class="btn-cancel" onclick="document.getElementById('clearAllModal').style.display='none'">Cancel</button>
+                <button type="submit" class="btn-confirm-clear">Yes, Delete All Users</button>
+            </div>
+        </form>
+    </div>
 </div>
 
 <!-- Reset Active Users Confirmation Modal -->
@@ -342,6 +369,39 @@
         transform: translateY(-1px);
         box-shadow: 0 4px 12px rgba(244,63,94,0.4);
     }
+
+    .btn-clear-all {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 9px 16px;
+        background: linear-gradient(135deg, #dc2626, #b91c1c);
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-clear-all:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(220,38,38,0.4);
+    }
+
+    .btn-confirm-clear {
+        padding: 9px 18px;
+        background: linear-gradient(135deg, #dc2626, #b91c1c);
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 0.88rem;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .btn-confirm-clear:hover { box-shadow: 0 4px 12px rgba(220,38,38,0.4); }
 
     .btn-reset {
         display: inline-flex;

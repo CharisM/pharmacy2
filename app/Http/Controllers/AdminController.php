@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Order;
 use App\Models\Product;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -9,30 +10,177 @@ use Illuminate\Support\Facades\DB;
 
 class AdminController extends Controller
 {
+    const CATEGORIES = [
+        'Medicines', 'Personal Care', 'Baby Care', 'Wellness', 'Vitamins', 'First Aid',
+    ];
+
     public function index()
     {
+        $grouped = Product::orderBy('name')->get()->groupBy('category');
+
+        $ordered = collect();
+        foreach (self::CATEGORIES as $cat) {
+            if ($grouped->has($cat)) $ordered[$cat] = $grouped[$cat];
+        }
+        foreach ($grouped as $cat => $items) {
+            if (!$ordered->has($cat)) $ordered[$cat] = $items;
+        }
+
         return view('admin.dashboard', [
-            'adminName' => auth()->user()->name,
-            'products' => Product::orderBy('name')->paginate(20),
+            'adminName'     => auth('admin')->user()->name,
+            'products'      => $ordered,
+            'categories'    => self::CATEGORIES,
             'totalProducts' => Product::count(),
-            'totalStock' => Product::sum('stock'),
-            'totalUsers' => DB::table('sessions')
+            'totalStock'    => Product::sum('stock'),
+            'totalOrders'   => Order::count(),
+            'totalUsers'    => DB::table('sessions')
                 ->whereNotNull('user_id')
                 ->whereIn('user_id', User::where('is_admin', false)->whereNotNull('email_verified_at')->pluck('id'))
                 ->count(),
-            'outOfStock' => Product::where('stock', 0)->count(),
+            'outOfStock'    => Product::where('stock', 0)->count(),
         ]);
     }
 
+    public function products(Request $request)
+    {
+        $query = Product::orderBy('name');
+
+        if ($request->filled('search')) {
+            $query->where('name', 'like', '%'.$request->search.'%');
+        }
+        if ($request->filled('category')) {
+            $query->where('category', $request->category);
+        }
+        if ($request->filled('stock_status')) {
+            match($request->stock_status) {
+                'out' => $query->where('stock', 0),
+                'low' => $query->where('stock', '>', 0)->where('stock', '<', 10),
+                'in'  => $query->where('stock', '>=', 10),
+                default => null,
+            };
+        }
+
+        $products = $query->paginate(15)->withQueryString();
+
+        return view('admin.products', [
+            'products'      => $products,
+            'categories'    => self::CATEGORIES,
+            'totalProducts' => Product::count(),
+            'inStock'       => Product::where('stock', '>=', 10)->count(),
+            'lowStock'      => Product::where('stock', '>', 0)->where('stock', '<', 10)->count(),
+            'outOfStock'    => Product::where('stock', 0)->count(),
+        ]);
+    }
+
+    public function storeProduct(Request $request)
+    {
+        $data = $request->validate([
+            'name'         => 'required|string|max:255',
+            'category'     => 'required|string|max:100',
+            'price'        => 'required|numeric|min:0',
+            'old_price'    => 'nullable|numeric|min:0',
+            'description'  => 'nullable|string',
+            'stock'        => 'required|integer|min:0',
+            'is_featured'  => 'nullable|boolean',
+            'image'        => 'nullable|string|max:255',
+            'image_upload' => 'nullable|image|max:2048',
+        ]);
+
+        if ($request->hasFile('image_upload')) {
+            $data['image'] = $request->file('image_upload')->store('product-images', 'public');
+        }
+
+        $data['is_featured'] = $request->boolean('is_featured');
+        unset($data['image_upload']);
+        Product::create($data);
+
+        return back()->with('success', 'Product added successfully.');
+    }
+
+    public function updateProduct(Request $request, Product $product)
+    {
+        $data = $request->validate([
+            'name'         => 'required|string|max:255',
+            'category'     => 'required|string|max:100',
+            'price'        => 'required|numeric|min:0',
+            'old_price'    => 'nullable|numeric|min:0',
+            'description'  => 'nullable|string',
+            'stock'        => 'required|integer|min:0',
+            'is_featured'  => 'nullable|boolean',
+            'image'        => 'nullable|string|max:500',
+            'image_upload' => 'nullable|image|max:2048',
+        ]);
+
+        if ($request->hasFile('image_upload')) {
+            $data['image'] = $request->file('image_upload')->store('product-images', 'public');
+        }
+
+        $data['is_featured'] = $request->boolean('is_featured');
+        unset($data['image_upload']);
+        $product->update($data);
+
+        return back()->with('success', 'Product updated successfully.');
+    }
+
+    public function destroyProduct(Product $product)
+    {
+        $product->delete();
+        return back()->with('success', 'Product deleted successfully.');
+    }
+
+    // ── Orders ────────────────────────────────────────────────────────────────
+
+    public function orders(Request $request)
+    {
+        $query = Order::with('user', 'items.product')->latest();
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('first_name', 'like', "%{$search}%")
+                  ->orWhere('last_name', 'like', "%{$search}%")
+                  ->orWhere('id', 'like', "%{$search}%");
+            });
+        }
+
+        return view('admin.orders', [
+            'adminName' => auth('admin')->user()->name,
+            'orders'    => $query->paginate(15)->withQueryString(),
+            'statuses'  => Order::$statuses,
+            'counts'    => [
+                'all'       => Order::count(),
+                'Pending'   => Order::where('status', 'Pending')->count(),
+                'Processing'=> Order::where('status', 'Processing')->count(),
+                'Shipped'   => Order::where('status', 'Shipped')->count(),
+                'Delivered' => Order::where('status', 'Delivered')->count(),
+                'Cancelled' => Order::where('status', 'Cancelled')->count(),
+            ],
+        ]);
+    }
+
+    public function updateOrderStatus(Request $request, Order $order)
+    {
+        $request->validate([
+            'status' => 'required|in:Pending,Processing,Shipped,Delivered,Cancelled',
+        ]);
+
+        $order->update(['status' => $request->status]);
+
+        return back()->with('success', "Order #" . str_pad($order->id, 5, '0', STR_PAD_LEFT) . " status updated to {$request->status}.");
+    }
+
+    // ── Users ─────────────────────────────────────────────────────────────────
+
     public function users()
     {
-        $activeUserIds = DB::table('sessions')
-            ->whereNotNull('user_id')
-            ->pluck('user_id')
-            ->toArray();
+        $activeUserIds = DB::table('sessions')->whereNotNull('user_id')->pluck('user_id')->toArray();
 
         return view('admin.users', [
-            'adminName'     => auth()->user()->name,
+            'adminName'     => auth('admin')->user()->name,
             'activeUserIds' => $activeUserIds,
             'users'         => User::where('is_admin', false)
                 ->whereNotNull('email_verified_at')
@@ -47,34 +195,25 @@ class AdminController extends Controller
             ->whereIn('user_id', User::where('is_admin', false)->pluck('id'))
             ->delete();
 
-        return redirect()->route('admin.users')->with('success', 'All user sessions have been cleared. The Active Users list has been reset.');
+        return redirect()->route('admin.users')->with('success', 'All user sessions have been cleared.');
     }
 
     public function forceLogoutAll()
     {
-        DB::table('sessions')
-            ->where('user_id', '!=', auth()->id())
-            ->delete();
+        DB::table('sessions')->where('user_id', '!=', auth('admin')->id())->delete();
 
-        return redirect()->route('admin.users')->with('success', 'All users have been logged out and must sign in again.');
+        return redirect()->route('admin.users')->with('success', 'All users have been logged out.');
     }
 
-    public function updateProduct(Request $request, Product $product)
+    public function clearAllUsers(Request $request)
     {
-        $data = $request->validate([
-            'stock'        => 'required|integer|min:0',
-            'image'        => 'nullable|string|max:255',
-            'image_upload' => 'nullable|image|max:2048',
-        ]);
+        $nonAdminIds = User::where('is_admin', false)->pluck('id');
 
-        if ($request->hasFile('image_upload')) {
-            $path = $request->file('image_upload')->store('product-images', 'public');
-            $data['image'] = $path;
-        }
+        DB::table('cart_items')->whereIn('user_id', $nonAdminIds)->delete();
+        DB::table('sessions')->whereIn('user_id', $nonAdminIds)->delete();
+        DB::table('orders')->whereIn('user_id', $nonAdminIds)->update(['user_id' => null]);
+        User::where('is_admin', false)->delete();
 
-        unset($data['image_upload']);
-        $product->update($data);
-
-        return back()->with('success', 'Product updated successfully.');
+        return redirect()->route('login')->with('status', 'all-users-cleared');
     }
 }

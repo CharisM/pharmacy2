@@ -231,6 +231,12 @@
             </div>
         @endif
 
+        @if (session('status') === 'all-users-cleared')
+            <div class="alert-success">
+                All user accounts have been cleared. The system is ready for fresh registrations.
+            </div>
+        @endif
+
         @if (session('unverified'))
             <div class="alert-danger">
                 Please verify your email address before logging in.

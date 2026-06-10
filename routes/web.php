@@ -4,78 +4,86 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\MessageController;
+use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ShopController;
 use Illuminate\Support\Facades\Route;
 
-Route::post('/cart/add/{product}',        [CartController::class, 'add'])->middleware(['auth','verified'])->name('cart.add');
-Route::post('/cart/buynow/{product}',     [CartController::class, 'buyNow'])->middleware(['auth','verified'])->name('cart.buynow');
-Route::patch('/cart/update/{cartItem}',   [CartController::class, 'update'])->middleware(['auth','verified'])->name('cart.update');
-Route::delete('/cart/remove/{cartItem}',  [CartController::class, 'remove'])->middleware(['auth','verified'])->name('cart.remove');
-Route::delete('/cart/clear',              [CartController::class, 'clear'])->middleware(['auth','verified'])->name('cart.clear');
-// Public Home Page
+// ── Public ────────────────────────────────────────────────────────────────────
 Route::get('/', [HomeController::class, 'index'])->name('home');
-
-// Auth Routes
-Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
-Route::post('/login', [AuthController::class, 'login']);
-
-Route::get('/adminlogin', [AuthController::class, 'showAdminLogin'])->name('admin.login');
-Route::post('/adminlogin', [AuthController::class, 'adminLogin']);
-
-Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
-Route::post('/register', [AuthController::class, 'register']);
-
-Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
-
-Route::get('/email/verify', [AuthController::class, 'showVerifyEmail'])
-    ->name('verification.notice');
-
-Route::post('/email/verify', [AuthController::class, 'verifyEmailCode'])
-    ->middleware('throttle:6,1')
-    ->name('verification.verify');
-
-Route::post('/email/verification-notification', [AuthController::class, 'resendEmailCode'])
-    ->middleware('throttle:6,1')
-    ->name('verification.send');
-
-// PUBLIC PAGES
-// Keep the named `shop` route but redirect it to home so the shop page is effectively removed
+Route::get('/about',   fn() => view('about'))->name('about');
+Route::get('/contact', fn() => view('contact'))->name('contact');
 Route::redirect('/shop', '/')->name('shop');
-
 Route::get('/categories/{category?}', [ShopController::class, 'categories'])->name('categories');
 
-Route::get('/about', function () {
-    return view('about');
-})->name('about');
+// ── User Auth ─────────────────────────────────────────────────────────────────
+Route::get('/login',    [AuthController::class, 'showLogin'])->name('login');
+Route::post('/login',   [AuthController::class, 'login']);
+Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
+Route::post('/register',[AuthController::class, 'register']);
+Route::post('/logout',  [AuthController::class, 'logout'])->name('logout');
 
-Route::get('/contact', function () {
-    return view('contact');
-})->name('contact');
+Route::get('/email/verify',  [AuthController::class, 'showVerifyEmail'])->name('verification.notice');
+Route::post('/email/verify', [AuthController::class, 'verifyEmailCode'])->middleware('throttle:6,1')->name('verification.verify');
+Route::post('/email/verification-notification', [AuthController::class, 'resendEmailCode'])->middleware('throttle:6,1')->name('verification.send');
 
-// PROTECTED ROUTES
-Route::middleware(['auth', 'verified'])->group(function () {
+// ── Admin Auth ────────────────────────────────────────────────────────────────
+Route::get('/adminlogin',  [AuthController::class, 'showAdminLogin'])->name('admin.login');
+Route::post('/adminlogin', [AuthController::class, 'adminLogin']);
+Route::post('/admin/logout', [AuthController::class, 'adminLogout'])->name('admin.logout');
 
-    // Example protected actions
+// ── Authenticated User routes (web guard, non-admin only) ─────────────────────
+Route::middleware(['auth:web', 'verified', 'not.admin'])->group(function () {
     Route::get('/cart', [CartController::class, 'index'])->name('cart');
+    Route::get('/checkout', fn() => view('checkout'))->name('checkout');
+    Route::post('/checkout',  [OrderController::class, 'store'])->name('orders.store');
+    Route::get('/order/confirmation/{order}', [OrderController::class, 'confirmation'])->name('orders.confirmation');
 
-    Route::get('/checkout', function () {
-        return view('checkout');
-    })->name('checkout');
-
-    Route::get('/profile', [ProfileController::class, 'show'])->name('profile');
+    Route::get('/profile',      [ProfileController::class, 'show'])->name('profile');
     Route::get('/profile/edit', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::put('/profile',      [ProfileController::class, 'update'])->name('profile.update');
 
+    Route::post('/contact', [MessageController::class, 'store'])->name('contact.send');
+
+    Route::get('/messages',                  [MessageController::class, 'userIndex'])->name('messages.index');
+    Route::get('/messages/{message}',        [MessageController::class, 'userThread'])->name('messages.thread');
+    Route::post('/messages/{message}/reply', [MessageController::class, 'userReply'])->name('messages.reply');
 });
 
-Route::middleware(['auth', 'verified', 'admin'])
+// Cart mutations also need web+not.admin
+Route::middleware(['auth:web', 'verified', 'not.admin'])->group(function () {
+    Route::post('/cart/add/{product}',       [CartController::class, 'add'])->name('cart.add');
+    Route::post('/cart/buynow/{product}',    [CartController::class, 'buyNow'])->name('cart.buynow');
+    Route::patch('/cart/update/{cartItem}',  [CartController::class, 'update'])->name('cart.update');
+    Route::delete('/cart/remove/{cartItem}', [CartController::class, 'remove'])->name('cart.remove');
+    Route::delete('/cart/clear',             [CartController::class, 'clear'])->name('cart.clear');
+});
+
+// ── Admin routes (admin guard only) ──────────────────────────────────────────
+Route::middleware(['auth:admin', 'verified', 'admin'])
     ->prefix('admin')
     ->name('admin.')
     ->group(function () {
-        Route::get('/', [AdminController::class, 'index'])->name('dashboard');
+        Route::get('/',      [AdminController::class, 'index'])->name('dashboard');
         Route::get('/users', [AdminController::class, 'users'])->name('users');
         Route::post('/users/force-logout', [AdminController::class, 'forceLogoutAll'])->name('users.forceLogout');
-        Route::post('/users/reset', [AdminController::class, 'resetUsers'])->name('users.reset');
-        Route::put('/products/{product}', [AdminController::class, 'updateProduct'])->name('products.update');
+        Route::post('/users/reset',        [AdminController::class, 'resetUsers'])->name('users.reset');
+        Route::post('/users/clear-all',    [AdminController::class, 'clearAllUsers'])->name('users.clearAll');
+
+        // Products (Stock Inventory lives on dashboard)
+        Route::get('/products',              fn() => redirect()->route('admin.dashboard'))->name('products');
+        Route::post('/products',             [AdminController::class, 'storeProduct'])->name('products.store');
+        Route::put('/products/{product}',    [AdminController::class, 'updateProduct'])->name('products.update');
+        Route::delete('/products/{product}', [AdminController::class, 'destroyProduct'])->name('products.destroy');
+
+        // Orders
+        Route::get('/orders',                  [AdminController::class, 'orders'])->name('orders');
+        Route::patch('/orders/{order}/status', [AdminController::class, 'updateOrderStatus'])->name('orders.status');
+
+        // Messages
+        Route::get('/messages',                  [MessageController::class, 'adminIndex'])->name('messages');
+        Route::get('/messages/{message}',        [MessageController::class, 'adminThread'])->name('messages.thread');
+        Route::post('/messages/{message}/reply', [MessageController::class, 'adminReply'])->name('messages.reply');
+        Route::delete('/messages/{message}',     [MessageController::class, 'adminDestroy'])->name('messages.destroy');
     });
