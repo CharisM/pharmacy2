@@ -915,9 +915,7 @@
         <div class="footer-brand">
             <a href="{{ route('home') }}" class="navbar-brand" style="font-size:16px;">
                 <div class="brand-icon">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                        <path d="M12 5v14M5 12h14"/>
-                    </svg>
+                    <img src="{{ asset('images/logopharmacy.png') }}" alt="Logo" class="brand-logo">
                 </div>
                 <div>
                     <span>Healthcare</span>
