@@ -194,8 +194,9 @@ class AuthController extends Controller
 
             $request->session()->forget('pending_registration');
 
-            return redirect()->route('login')
-                ->with('status', 'email-verified');
+            Auth::guard('web')->login($user);
+            $request->session()->regenerate();
+            return redirect()->route('home');
         }
 
         // Existing unverified user
@@ -228,13 +229,9 @@ class AuthController extends Controller
 
         $request->session()->forget('pending_verification_user_id');
 
-        if (Auth::guard('web')->check()) {
-            Auth::guard('web')->logout();
-            $request->session()->invalidate();
-            $request->session()->regenerateToken();
-        }
-
-        return redirect()->route('login')->with('status', 'email-verified');
+        Auth::guard('web')->login($user);
+        $request->session()->regenerate();
+        return redirect()->route('home');
     }
 
     public function resendEmailCode(Request $request)
