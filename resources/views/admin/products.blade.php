@@ -75,7 +75,7 @@
                         <tr>
                             <td class="td-num">{{ $products->firstItem() + $i }}</td>
                             <td class="cell-product">
-                                <img src="{{ !empty($product->image) ? $product->image : asset('images/default-avatar.svg') }}" alt="{{ $product->name }}" onerror="this.src='{{ asset('images/default-avatar.svg') }}'" />
+                                <img src="{{ $product->image_url ?? asset('images/default-avatar.svg') }}" alt="{{ $product->name }}" onerror="this.src='{{ asset('images/default-avatar.svg') }}'" />
                                 <div>
                                     <span class="product-name">{{ $product->name }}</span>
                                     @if($product->description)
@@ -124,7 +124,7 @@
                                         {{ $product->price }},
                                         {{ $product->old_price ?? 'null' }},
                                         {{ $product->stock }},
-                                        '{{ addslashes($product->image ?? '') }}',
+                                        '{{ addslashes($product->image_url ?? '') }}',
                                         {{ $product->is_featured ? 'true' : 'false' }},
                                         '{{ addslashes($product->description ?? '') }}'
                                     )">
@@ -189,7 +189,7 @@
             <h3>Add New Product</h3>
             <button class="modal-close-x" onclick="document.getElementById('addModal').style.display='none'">✕</button>
         </div>
-        <form method="POST" action="{{ route('admin.products.store') }}">
+        <form method="POST" action="{{ route('admin.products.store') }}" enctype="multipart/form-data">
             @csrf
             <div class="form-grid">
                 <div class="form-group full">
@@ -224,8 +224,8 @@
                     <img id="addImgPreview" src="" alt="preview" style="max-height:90px;border-radius:8px;border:1px solid #e2e8f0;object-fit:cover;" />
                 </div>
                 <div class="form-group full">
-                    <label>Image URL <span class="opt">(optional)</span></label>
-                    <input type="url" name="image" id="addImage" class="form-input" placeholder="https://example.com/image.jpg" oninput="previewImage('add', this.value)" />
+                    <label>Upload Image <span class="opt">(optional)</span></label>
+                    <input type="text" name="image" id="addImage" class="form-input" placeholder="https://example.com/image.jpg" oninput="previewImage('add', this.value)" />
                 </div>
                 <div class="form-group full toggle-row">
                     <input type="checkbox" name="is_featured" value="1" id="addFeatured" />
@@ -247,7 +247,7 @@
             <h3>Edit Product</h3>
             <button class="modal-close-x" onclick="closeEdit()">✕</button>
         </div>
-        <form id="editForm" method="POST">
+        <form id="editForm" method="POST" enctype="multipart/form-data">
             @csrf @method('PUT')
             <div class="form-grid">
                 <div class="form-group full">
@@ -278,12 +278,17 @@
                     <label>Description <span class="opt">(optional)</span></label>
                     <textarea name="description" id="editDescription" rows="3" class="form-input" style="resize:vertical"></textarea>
                 </div>
+                <div class="form-group full" id="editCurrentImgWrap" style="display:none;">
+                    <p style="font-size:0.78rem;color:#64748b;margin:0 0 4px;font-weight:600;">Current Image</p>
+                    <img id="editCurrentImg" src="" alt="current" style="max-height:80px;border-radius:8px;border:1px solid #e2e8f0;object-fit:cover;" />
+                </div>
                 <div class="form-group full" id="editImgPreviewWrap" style="display:none;">
-                    <img id="editImgPreview" src="" alt="preview" style="max-height:90px;border-radius:8px;border:1px solid #e2e8f0;object-fit:cover;" />
+                    <p style="font-size:0.78rem;color:#64748b;margin:0 0 4px;font-weight:600;">New Image Preview</p>
+                    <img id="editImgPreview" src="" alt="preview" style="max-height:80px;border-radius:8px;border:1px solid #e2e8f0;object-fit:cover;" />
                 </div>
                 <div class="form-group full">
-                    <label>Image URL <span class="opt">(optional)</span></label>
-                    <input type="url" name="image" id="editImage" class="form-input" placeholder="https://example.com/image.jpg" oninput="previewImage('edit', this.value)" />
+                    <label>Upload Image <span class="opt">(optional)</span></label>
+                    <input type="text" name="image" id="editImage" class="form-input" placeholder="https://example.com/image.jpg" oninput="previewImage('edit', this.value)" />
                 </div>
                 <div class="form-group full toggle-row">
                     <input type="checkbox" name="is_featured" id="editFeatured" value="1" />
@@ -309,7 +314,7 @@
     'stock'       => $p->stock,
     'is_featured' => $p->is_featured,
     'description' => $p->description,
-    'image_url'   => $p->image_url,
+    'image_url'   => $p->image_url ?? null,
 ])->values()) !!}
 </script>
 
@@ -455,30 +460,43 @@
         document.getElementById('viewModal').style.display = 'flex';
     }
 
-    function openEdit(id, name, category, price, oldPrice, stock, image, isFeatured, description) {
+    function openEdit(id, name, category, price, oldPrice, stock, imageUrl, isFeatured, description) {
         document.getElementById('editForm').action = `/admin/products/${id}`;
         document.getElementById('editName').value = name;
         document.getElementById('editCategory').value = category;
         document.getElementById('editPrice').value = price;
         document.getElementById('editOldPrice').value = oldPrice ?? '';
         document.getElementById('editStock').value = stock;
-        document.getElementById('editImage').value = image;
+        document.getElementById('editImage').value = '';
         document.getElementById('editFeatured').checked = isFeatured;
         document.getElementById('editDescription').value = description;
-        previewImage('edit', image);
+
+        const curWrap = document.getElementById('editCurrentImgWrap');
+        const curImg  = document.getElementById('editCurrentImg');
+        if (imageUrl) {
+            curImg.src = imageUrl;
+            curWrap.style.display = 'block';
+        } else {
+            curWrap.style.display = 'none';
+            curImg.src = '';
+        }
+        document.getElementById('editImgPreviewWrap').style.display = 'none';
+        document.getElementById('editImgPreview').src = '';
         document.getElementById('editModal').style.display = 'flex';
     }
 
     function closeEdit() { document.getElementById('editModal').style.display = 'none'; }
 
-    function previewImage(prefix, url) {
+    function previewImage(prefix, input) {
         const wrap = document.getElementById(prefix + 'ImgPreviewWrap');
         const img  = document.getElementById(prefix + 'ImgPreview');
-        if (url && url.trim()) {
-            img.src = url;
-            wrap.style.display = 'block';
+        if (input && input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = e => { img.src = e.target.result; wrap.style.display = 'block'; };
+            reader.readAsDataURL(input.files[0]);
         } else {
             wrap.style.display = 'none';
+            img.src = '';
         }
     }
 

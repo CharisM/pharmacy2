@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
 
 class Product extends Model
 {
@@ -24,7 +25,12 @@ class Product extends Model
 
     public function getImageUrlAttribute(): ?string
     {
-        return !empty($this->image) ? $this->image : null;
+        if (empty($this->image)) return null;
+        // Stored file (products/xxx.jpg)
+        if (!str_starts_with($this->image, 'http')) {
+            return Storage::disk('public')->url($this->image);
+        }
+        return $this->image;
     }
 
     /**

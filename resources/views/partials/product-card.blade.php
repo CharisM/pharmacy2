@@ -4,7 +4,7 @@
     $name       = data_get($product, 'name');
     $price      = data_get($product, 'price', 0);
     $oldPrice   = data_get($product, 'old_price');
-    $imageUrl   = is_object($product) ? ($product->image ?: null) : null;
+    $imageUrl   = is_object($product) ? ($product->image_url ?? null) : null;
     $stock      = (int) data_get($product, 'stock', 0);
     $outOfStock = $stock === 0;
 @endphp

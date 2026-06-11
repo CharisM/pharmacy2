@@ -7,6 +7,7 @@ use App\Models\Product;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class AdminController extends Controller
 {
@@ -92,11 +93,16 @@ class AdminController extends Controller
             'description' => 'nullable|string',
             'stock'       => 'required|integer|min:0',
             'is_featured' => 'nullable|boolean',
-            'image'       => 'nullable|string|max:2048',
+            'image'       => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
 
         $data['is_featured'] = $request->boolean('is_featured');
-        $data['image'] = $request->filled('image') ? trim($request->input('image')) : null;
+        unset($data['image']);
+
+        if ($request->hasFile('image')) {
+            $data['image'] = $request->file('image')->store('products', 'public');
+        }
+
         Product::create($data);
 
         return back()->with('success', 'Product added successfully.');
@@ -112,11 +118,19 @@ class AdminController extends Controller
             'description' => 'nullable|string',
             'stock'       => 'required|integer|min:0',
             'is_featured' => 'nullable|boolean',
-            'image'       => 'nullable|string|max:2048',
+            'image'       => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
 
         $data['is_featured'] = $request->boolean('is_featured');
-        $data['image'] = $request->filled('image') ? trim($request->input('image')) : null;
+        unset($data['image']);
+
+        if ($request->hasFile('image')) {
+            if ($product->image && Storage::disk('public')->exists($product->image)) {
+                Storage::disk('public')->delete($product->image);
+            }
+            $data['image'] = $request->file('image')->store('products', 'public');
+        }
+
         $product->update($data);
 
         return back()->with('success', 'Product updated successfully.');
@@ -143,6 +157,9 @@ class AdminController extends Controller
 
     public function destroyProduct(Product $product)
     {
+        if ($product->image && Storage::disk('public')->exists($product->image)) {
+            Storage::disk('public')->delete($product->image);
+        }
         $product->delete();
         return back()->with('success', 'Product deleted successfully.');
     }
