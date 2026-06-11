@@ -32,9 +32,11 @@ class EmailVerificationCode extends Notification
      */
     public function toMail(object $notifiable): MailMessage
     {
+        $name = $notifiable->name ?? 'there';
+
         return (new MailMessage)
             ->subject('Your Healthcare Pharmacy verification code')
-            ->greeting('Hello '.$notifiable->name)
+            ->greeting('Hello ' . $name . ',')
             ->line('Use this verification code to finish creating your account:')
             ->line($this->code)
             ->line('This code will expire in 10 minutes.');

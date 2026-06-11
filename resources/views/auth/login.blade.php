@@ -225,6 +225,12 @@
             </div>
         @endif
 
+        @if (session('status') === 'password-reset')
+            <div class="alert-success">
+                ✅ Your password has been reset. You can now log in with your new password.
+            </div>
+        @endif
+
         @if (session('status') === 'email-verified' || session('status') === 'account-verified')
             <div class="alert-success">
                 ✅ Your email has been verified. You can now log in.
@@ -279,7 +285,7 @@
             </div>
 
             <div class="form-footer">
-                <a href="#">Forgot your password?</a>
+                <a href="{{ route('password.request') }}">Forgot your password?</a>
             </div>
 
             <button type="submit" class="btn-primary">Log In</button>

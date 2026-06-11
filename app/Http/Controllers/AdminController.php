@@ -209,11 +209,14 @@ class AdminController extends Controller
 
     public function deleteUser(User $user)
     {
+        $orderIds = DB::table('orders')->where('user_id', $user->id)->pluck('id');
+
         DB::table('sessions')->where('user_id', $user->id)->delete();
         DB::table('cart_items')->where('user_id', $user->id)->delete();
         DB::table('password_reset_tokens')->where('email', $user->email)->delete();
-        DB::table('orders')->where('user_id', $user->id)->update(['user_id' => null]);
-        DB::table('messages')->where('user_id', $user->id)->update(['user_id' => null]);
+        DB::table('order_items')->whereIn('order_id', $orderIds)->delete();
+        DB::table('orders')->where('user_id', $user->id)->delete();
+        DB::table('messages')->where('user_id', $user->id)->delete();
         $user->delete();
 
         return redirect()->route('admin.users')->with('success', "User account has been deleted.");
@@ -222,13 +225,15 @@ class AdminController extends Controller
     public function deleteAllUsers()
     {
         $nonAdminIds = User::where('is_admin', false)->pluck('id');
-        $emails = User::where('is_admin', false)->pluck('email');
+        $emails      = User::where('is_admin', false)->pluck('email');
+        $orderIds    = DB::table('orders')->whereIn('user_id', $nonAdminIds)->pluck('id');
 
         DB::table('sessions')->whereIn('user_id', $nonAdminIds)->delete();
         DB::table('cart_items')->whereIn('user_id', $nonAdminIds)->delete();
         DB::table('password_reset_tokens')->whereIn('email', $emails)->delete();
-        DB::table('orders')->whereIn('user_id', $nonAdminIds)->update(['user_id' => null]);
-        DB::table('messages')->whereIn('user_id', $nonAdminIds)->update(['user_id' => null]);
+        DB::table('order_items')->whereIn('order_id', $orderIds)->delete();
+        DB::table('orders')->whereIn('user_id', $nonAdminIds)->delete();
+        DB::table('messages')->whereIn('user_id', $nonAdminIds)->delete();
         User::where('is_admin', false)->delete();
 
         return redirect()->route('admin.users')->with('success', 'All user accounts have been deleted.');

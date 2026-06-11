@@ -24,6 +24,11 @@ Route::get('/register', [AuthController::class, 'showRegister'])->name('register
 Route::post('/register',[AuthController::class, 'register']);
 Route::post('/logout',  [AuthController::class, 'logout'])->name('logout');
 
+Route::get('/password/forgot',       [AuthController::class, 'showForgotPassword'])->name('password.request');
+Route::post('/password/forgot',      [AuthController::class, 'sendResetLink'])->name('password.email');
+Route::get('/password/reset/{token}',[AuthController::class, 'showResetPassword'])->name('password.reset');
+Route::post('/password/reset',       [AuthController::class, 'resetPassword'])->name('password.update');
+
 Route::get('/email/verify',  [AuthController::class, 'showVerifyEmail'])->name('verification.notice');
 Route::post('/email/verify', [AuthController::class, 'verifyEmailCode'])->middleware('throttle:6,1')->name('verification.verify');
 Route::post('/email/verification-notification', [AuthController::class, 'resendEmailCode'])->middleware('throttle:6,1')->name('verification.send');

@@ -4,9 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Notifications\EmailVerificationCode;
+use App\Notifications\PasswordResetNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
@@ -132,6 +137,10 @@ class AuthController extends Controller
             'password' => ['required', 'confirmed', 'min:8', 'regex:/[A-Z]/', 'regex:/[0-9]/', 'regex:/[@$!%*#?&]/'],
         ]);
 
+        // Clear any stale pending registration from a previous or deleted account
+        $request->session()->forget('pending_registration');
+        $request->session()->forget('pending_verification_user_id');
+
         $code = (string) random_int(100000, 999999);
 
         $request->session()->put('pending_registration', [
@@ -142,8 +151,13 @@ class AuthController extends Controller
             'expires_at' => now()->addMinutes(10)->toDateTimeString(),
         ]);
 
-        $temp = new User(['name' => $request->name, 'email' => $request->email]);
-        $temp->notify(new EmailVerificationCode($code));
+        // Use an anonymous notifiable — avoids serializing an unsaved model through the queue
+        try {
+            Notification::route('mail', $request->email)
+                ->notify((new EmailVerificationCode($code))->onQueue(null)->afterCommit(false));
+        } catch (\Throwable $e) {
+            Log::error('Verification email failed: ' . $e->getMessage());
+        }
 
         return redirect()->route('verification.notice')
             ->with('status', 'verification-code-sent');
@@ -241,8 +255,12 @@ class AuthController extends Controller
             $pending['expires_at'] = now()->addMinutes(10)->toDateTimeString();
             $request->session()->put('pending_registration', $pending);
 
-            $temp = new User(['name' => $pending['name'], 'email' => $pending['email']]);
-            $temp->notify(new EmailVerificationCode($code));
+            try {
+                Notification::route('mail', $pending['email'])
+                    ->notify((new EmailVerificationCode($code))->onQueue(null)->afterCommit(false));
+            } catch (\Throwable $e) {
+                Log::error('Verification email failed: ' . $e->getMessage());
+            }
 
             return back()->with('status', 'verification-code-sent');
         }
@@ -260,6 +278,89 @@ class AuthController extends Controller
         $this->startEmailVerification($request, $user);
 
         return back()->with('status', 'verification-code-sent');
+    }
+
+    // ── Forgot / Reset Password ──────────────────────────────────────────────
+
+    public function showForgotPassword()
+    {
+        return view('auth.forgot-password');
+    }
+
+    public function sendResetLink(Request $request)
+    {
+        $request->validate(['email' => 'required|email']);
+
+        $user = User::where('email', $request->email)->first();
+
+        if (! $user) {
+            return back()->withErrors(['email' => 'No account found with that email address.']);
+        }
+
+        DB::table('password_reset_tokens')->where('email', $request->email)->delete();
+
+        $token = Str::random(64);
+
+        DB::table('password_reset_tokens')->insert([
+            'email'      => $request->email,
+            'token'      => Hash::make($token),
+            'created_at' => now(),
+        ]);
+
+        $resetUrl = url('/password/reset/' . $token . '?email=' . urlencode($request->email));
+
+        try {
+            $user->notify(new PasswordResetNotification($resetUrl));
+        } catch (\Throwable $e) {
+            Log::error('Password reset email failed: ' . $e->getMessage());
+        }
+
+        return back()->with('status', 'reset-link-sent');
+    }
+
+    public function showResetPassword(Request $request, string $token)
+    {
+        return view('auth.reset-password', [
+            'token' => $token,
+            'email' => $request->query('email', old('email', '')),
+        ]);
+    }
+
+    public function resetPassword(Request $request)
+    {
+        $validated = $request->validate([
+            'email'    => 'required|email',
+            'token'    => 'required|string',
+            'password' => ['required', 'confirmed', 'min:8', 'regex:/[A-Z]/', 'regex:/[0-9]/', 'regex:/[@$!%*#?&]/'],
+        ]);
+
+        $redirectBack = redirect(
+            route('password.reset', ['token' => $request->token]) . '?email=' . urlencode($request->email)
+        )->withInput($request->only('email'));
+
+        $record = DB::table('password_reset_tokens')->where('email', $request->email)->first();
+
+        if (! $record || ! Hash::check($request->token, $record->token)) {
+            return $redirectBack->withErrors(['email' => 'This password reset link is invalid.']);
+        }
+
+        if (\Carbon\Carbon::parse($record->created_at)->addMinutes(60)->isPast()) {
+            DB::table('password_reset_tokens')->where('email', $request->email)->delete();
+            return redirect()->route('password.request')
+                ->withErrors(['email' => 'This password reset link has expired. Please request a new one.']);
+        }
+
+        $user = User::where('email', $request->email)->first();
+
+        if (! $user) {
+            return $redirectBack->withErrors(['email' => 'No account found with that email address.']);
+        }
+
+        $user->forceFill(['password' => Hash::make($request->password)])->save();
+
+        DB::table('password_reset_tokens')->where('email', $request->email)->delete();
+
+        return redirect()->route('login')->with('status', 'password-reset');
     }
 
     // ── Logout ────────────────────────────────────────────────────────────────
