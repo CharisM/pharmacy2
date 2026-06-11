@@ -225,7 +225,7 @@
                 </div>
                 <div class="form-group full">
                     <label>Upload Image <span class="opt">(optional)</span></label>
-                    <input type="text" name="image" id="addImage" class="form-input" placeholder="https://example.com/image.jpg" oninput="previewImage('add', this.value)" />
+                    <input type="file" name="image" id="addImage" class="form-input" accept="image/*" onchange="previewImage('add', this)" />
                 </div>
                 <div class="form-group full toggle-row">
                     <input type="checkbox" name="is_featured" value="1" id="addFeatured" />
@@ -288,7 +288,7 @@
                 </div>
                 <div class="form-group full">
                     <label>Upload Image <span class="opt">(optional)</span></label>
-                    <input type="text" name="image" id="editImage" class="form-input" placeholder="https://example.com/image.jpg" oninput="previewImage('edit', this.value)" />
+                    <input type="file" name="image" id="editImage" class="form-input" accept="image/*" onchange="previewImage('edit', this)" />
                 </div>
                 <div class="form-group full toggle-row">
                     <input type="checkbox" name="is_featured" id="editFeatured" value="1" />
@@ -490,7 +490,7 @@
     function previewImage(prefix, input) {
         const wrap = document.getElementById(prefix + 'ImgPreviewWrap');
         const img  = document.getElementById(prefix + 'ImgPreview');
-        if (input && input.files && input.files[0]) {
+        if (input.files && input.files[0]) {
             const reader = new FileReader();
             reader.onload = e => { img.src = e.target.result; wrap.style.display = 'block'; };
             reader.readAsDataURL(input.files[0]);
