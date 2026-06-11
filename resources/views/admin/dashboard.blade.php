@@ -720,6 +720,13 @@
                 saveBtn.classList.remove('visible', 'saving');
                 saveBtn.disabled = false;
 
+                // Update top stat cards from fresh server totals
+                if (data.totalStock !== undefined) {
+                    const statBodies = document.querySelectorAll('.stat-body strong');
+                    if (statBodies[1]) statBodies[1].textContent = data.totalStock;
+                    if (statBodies[3]) statBodies[3].textContent = data.outOfStock;
+                }
+
                 // Brief green flash on the row
                 const row = wrap.closest('tr');
                 row.style.transition = 'background 0.3s';

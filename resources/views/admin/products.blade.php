@@ -75,7 +75,7 @@
                         <tr>
                             <td class="td-num">{{ $products->firstItem() + $i }}</td>
                             <td class="cell-product">
-                                <img src="{{ $product->image_url ?? asset('images/default-avatar.svg') }}" alt="{{ $product->name }}" />
+                                <img src="{{ !empty($product->image) ? $product->image : asset('images/default-avatar.svg') }}" alt="{{ $product->name }}" onerror="this.src='{{ asset('images/default-avatar.svg') }}'" />
                                 <div>
                                     <span class="product-name">{{ $product->name }}</span>
                                     @if($product->description)

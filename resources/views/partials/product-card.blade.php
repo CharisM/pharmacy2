@@ -4,7 +4,7 @@
     $name       = data_get($product, 'name');
     $price      = data_get($product, 'price', 0);
     $oldPrice   = data_get($product, 'old_price');
-    $imageUrl   = is_object($product) ? optional($product)->image_url : null;
+    $imageUrl   = is_object($product) ? ($product->image ?: null) : null;
     $stock      = (int) data_get($product, 'stock', 0);
     $outOfStock = $stock === 0;
 @endphp
@@ -13,7 +13,13 @@
     {{-- Image --}}
     <div class="pc-image">
         @if ($imageUrl)
-            <img src="{{ $imageUrl }}" alt="{{ $name }}">
+            <img src="{{ $imageUrl }}" alt="{{ $name }}" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'">
+            <div class="pc-image-placeholder" style="display:none">
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="3" y="3" width="18" height="18" rx="4"/><path d="M3 9l4-4 4 4 4-4 4 4"/>
+                    <circle cx="8.5" cy="14.5" r="1.5"/>
+                </svg>
+            </div>
         @else
             <div class="pc-image-placeholder">
                 <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" xmlns="http://www.w3.org/2000/svg">

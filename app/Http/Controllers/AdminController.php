@@ -26,19 +26,24 @@ class AdminController extends Controller
             if (!$ordered->has($cat)) $ordered[$cat] = $items;
         }
 
-        return view('admin.dashboard', [
-            'adminName'     => auth('admin')->user()->name,
-            'products'      => $ordered,
-            'categories'    => self::CATEGORIES,
-            'totalProducts' => Product::count(),
-            'totalStock'    => Product::sum('stock'),
-            'totalOrders'   => Order::count(),
-            'totalUsers'    => DB::table('sessions')
-                ->whereNotNull('user_id')
-                ->whereIn('user_id', User::where('is_admin', false)->whereNotNull('email_verified_at')->pluck('id'))
-                ->count(),
-            'outOfStock'    => Product::where('stock', 0)->count(),
-        ]);
+        return response()
+            ->view('admin.dashboard', [
+                'adminName'     => auth('admin')->user()->name,
+                'products'      => $ordered,
+                'categories'    => self::CATEGORIES,
+                'totalProducts' => Product::count(),
+                'totalStock'    => Product::sum('stock'),
+                'totalOrders'   => Order::count(),
+                'totalUsers'    => DB::table('sessions')
+                    ->whereNotNull('user_id')
+                    ->whereIn('user_id', User::where('is_admin', false)->whereNotNull('email_verified_at')->pluck('id'))
+                    ->count(),
+                'outOfStock'    => Product::where('stock', 0)->count(),
+            ])
+            ->withHeaders([
+                'Cache-Control' => 'no-store, no-cache, must-revalidate',
+                'Pragma'        => 'no-cache',
+            ]);
     }
 
     public function products(Request $request)
@@ -87,10 +92,11 @@ class AdminController extends Controller
             'description' => 'nullable|string',
             'stock'       => 'required|integer|min:0',
             'is_featured' => 'nullable|boolean',
-            'image'       => 'nullable|url|max:2048',
+            'image'       => 'nullable|string|max:2048',
         ]);
 
         $data['is_featured'] = $request->boolean('is_featured');
+        $data['image'] = $request->filled('image') ? trim($request->input('image')) : null;
         Product::create($data);
 
         return back()->with('success', 'Product added successfully.');
@@ -106,10 +112,11 @@ class AdminController extends Controller
             'description' => 'nullable|string',
             'stock'       => 'required|integer|min:0',
             'is_featured' => 'nullable|boolean',
-            'image'       => 'nullable|url|max:2048',
+            'image'       => 'nullable|string|max:2048',
         ]);
 
         $data['is_featured'] = $request->boolean('is_featured');
+        $data['image'] = $request->filled('image') ? trim($request->input('image')) : null;
         $product->update($data);
 
         return back()->with('success', 'Product updated successfully.');
@@ -124,8 +131,10 @@ class AdminController extends Controller
         $product->update(['stock' => (int) $request->stock]);
 
         return response()->json([
-            'stock'   => $product->fresh()->stock,
-            'message' => 'Stock updated successfully.',
+            'stock'      => $product->fresh()->stock,
+            'totalStock' => Product::sum('stock'),
+            'outOfStock' => Product::where('stock', 0)->count(),
+            'message'    => 'Stock updated successfully.',
         ])->withHeaders([
             'Cache-Control' => 'no-store, no-cache, must-revalidate',
             'Pragma'        => 'no-cache',
@@ -177,9 +186,42 @@ class AdminController extends Controller
             'status' => 'required|in:Pending,Processing,Shipped,Delivered,Cancelled',
         ]);
 
-        $order->update(['status' => $request->status]);
+        $oldStatus = $order->status;
+        $newStatus = $request->status;
 
-        return back()->with('success', "Order #" . str_pad($order->id, 5, '0', STR_PAD_LEFT) . " status updated to {$request->status}.");
+        if ($oldStatus === $newStatus) {
+            return back()->with('success', "Order #" . str_pad($order->id, 5, '0', STR_PAD_LEFT) . " status is already {$newStatus}.");
+        }
+
+        $order->loadMissing('items');
+
+        DB::transaction(function () use ($order, $oldStatus, $newStatus) {
+            // Restore stock when cancelling an active order
+            if ($newStatus === 'Cancelled' && $oldStatus !== 'Cancelled') {
+                foreach ($order->items as $item) {
+                    Product::where('id', $item->product_id)
+                        ->lockForUpdate()
+                        ->increment('stock', $item->quantity);
+                }
+            }
+
+            // Deduct stock if reactivating a previously cancelled order
+            if ($oldStatus === 'Cancelled' && $newStatus !== 'Cancelled') {
+                $productIds = $order->items->pluck('product_id');
+                $products   = Product::whereIn('id', $productIds)->lockForUpdate()->get()->keyBy('id');
+
+                foreach ($order->items as $item) {
+                    $product = $products->get($item->product_id);
+                    if ($product && $product->stock >= $item->quantity) {
+                        $product->decrement('stock', $item->quantity);
+                    }
+                }
+            }
+
+            $order->update(['status' => $newStatus]);
+        });
+
+        return back()->with('success', "Order #" . str_pad($order->id, 5, '0', STR_PAD_LEFT) . " status updated to {$newStatus}.");
     }
 
     // ── Users ─────────────────────────────────────────────────────────────────
