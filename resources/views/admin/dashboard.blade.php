@@ -124,7 +124,7 @@
                                         <div class="stock-edit-wrap" data-id="{{ $product->id }}">
                                             <input
                                                 type="number"
-                                                class="stock-input"
+                                                class="stock-input {{ $product->stock == 0 ? 'stock-zero' : ($product->stock < 10 ? 'stock-low' : 'stock-ok') }}"
                                                 value="{{ $product->stock }}"
                                                 min="0"
                                                 data-original="{{ $product->stock }}"
@@ -132,9 +132,6 @@
                                             <button class="btn-stock-save" title="Save stock">
                                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12"><polyline points="20 6 9 17 4 12"/></svg>
                                             </button>
-                                            <span class="stock-badge {{ $product->stock == 0 ? 'stock-zero' : ($product->stock < 10 ? 'stock-low' : 'stock-ok') }}">
-                                                {{ $product->stock }}
-                                            </span>
                                         </div>
                                     </td>
                                     <td>
@@ -463,6 +460,9 @@
     .stock-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
     .stock-input:focus { outline: none; border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.12); background: #fff; }
     .stock-input.changed { border-color: #f59e0b; background: #fffbeb; }
+    .stock-input.stock-ok   { border-color: #86efac; background: #f0fdf4; color: #16a34a; }
+    .stock-input.stock-low  { border-color: #fcd34d; background: #fffbeb; color: #b45309; }
+    .stock-input.stock-zero { border-color: #fda4af; background: #fff1f2; color: #e11d48; }
     .btn-stock-save {
         width: 26px; height: 26px; border-radius: 7px; border: none;
         background: #6366f1; color: #fff; cursor: pointer;
@@ -675,7 +675,6 @@
     document.querySelectorAll('.stock-edit-wrap').forEach(wrap => {
         const input  = wrap.querySelector('.stock-input');
         const saveBtn = wrap.querySelector('.btn-stock-save');
-        const badge  = wrap.querySelector('.stock-badge');
         const productId = wrap.dataset.id;
 
         input.addEventListener('input', () => {
@@ -709,9 +708,9 @@
                 const data = await res.json();
                 const newStock = data.stock;
 
-                // Update badge
-                badge.textContent = newStock;
-                badge.className = 'stock-badge ' + stockClass(newStock);
+                // Update input color class
+                input.classList.remove('stock-ok', 'stock-low', 'stock-zero');
+                input.classList.add(stockClass(newStock));
 
                 // Sync input state
                 input.value = newStock;
